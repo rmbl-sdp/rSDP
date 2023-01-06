@@ -1,0 +1,46 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# rSDP
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The rSDP package provides a simplified interface for discovering, querying, and subsetting data products that are incorporated into the RMBL Spatial Data Platform. The RMBL SDP provides a set of curated, high-resolution, and high-fidelity geospatial datasets for a set of domains in Western Colorado (USA) in the vicinity of [Rocky Mountain Biological Laboratory](https://rmbl.org). For more information about the RMBL SDP [see here](https://www.rmbl.org/scientists/resources/spatial-data-platform/).
+
+SDP data products are provided as geospatial raster datasets in [cloud-optimized Geotiff]() (COG) format. The rSDP package provides functions to access these datasets in cloud storage (Amazon S3) without downloading.
+
+## Installation
+
+You can install the development version of rSDP from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("rmbl-sdp/rSDP")
+```
+
+## Discovering Data
+
+The package provides functions `get_sdp_catalog()`, and `get_sdp_template()` that download information about what datasets are currently available and what their spatial attributes are.
+
+```{r example}
+library(rSDP)
+## Gets entries for vegetation data products in the Upper Gunnison (UG) domain.
+sdp_cat <- get_sdp_catalog(domains="UG", 
+                           types="Vegetation",
+                           deprecated=FALSE,
+                           return_stac=FALSE)
+sdp_cat
+```

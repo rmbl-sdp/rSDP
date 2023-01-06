@@ -1,16 +1,19 @@
 Package: rSDP
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Discover, Query, and Subset Data from the RMBL Spatial Data Platform
+Version: 0.1
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Ian", "Breckheimer", , "ikb@rmbl.org", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-4698-977X"))
+Description: The rSDP package provides a simplified interface for discovering, querying, and subsetting data products that are incorporated into the RMBL Spatial Data Platform. The RMBL SDP provides a set of curated, high-resolution, and high-fidelity geospatial datasets for a set of domains in Western Colorado (USA) in the vicinity of [Rocky Mountain Biological Laboratory](https://rmbl.org). For more information about the RMBL SDP [see here](https://www.rmbl.org/scientists/resources/spatial-data-platform/). SDP data products are provided as geospatial raster datasets in [cloud-optimized Geotiff]() (COG) format. The rSDP package provides functions to access these datasets in cloud storage (Amazon S3) without downloading.
+License: CC BY 4.0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 URL: https://github.com/rmbl-sdp/rSDP
 BugReports: https://github.com/rmbl-sdp/rSDP/issues
 Imports: 
-    dplyr
+    dplyr,
+    utils
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
