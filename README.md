@@ -43,7 +43,7 @@ sdp_cat <- get_sdp_catalog(domains="UG",
                            types="Vegetation",
                            deprecated=FALSE,
                            return_stac=FALSE)
-sdp_cat
+sdp_cat[,1:5]
 #>     Release       Type                       Product Domain Resolution
 #> 54 Release3 Vegetation              Understory Cover     UG         3m
 #> 55 Release3 Vegetation       Vegetation Canopy Cover     UG         3m
@@ -55,26 +55,4 @@ sdp_cat
 #> 61 Release3 Vegetation       Septober 2019 NAIP NDVI     UG         1m
 #> 73 Basemaps Vegetation      Canopy Structure Basemap     UG         2m
 #> 74 Basemaps Vegetation             Landcover Basemap     UG         2m
-#>                                                                                                   Data.URL
-#> 54 https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_2mcover_3m_v2.tif
-#> 55   https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_cover_3m_v3.tif
-#> 56  https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_height_1m_v2.tif
-#> 57    https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_ht20_3m_v2.tif
-#> 58    https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_ht80_3m_v4.tif
-#> 59      https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_landcover_1m_v4.tif
-#> 60   https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_ndvi_oct2017_1m_v1.tif
-#> 61  https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_ndvi_sept2019_1m_v2.tif
-#> 73             https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/basemaps/UG_canopy_basemap_v3.tif
-#> 74          https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/basemaps/UG_landcover_basemap_v3.tif
-#>                                                                                                        Metadata.URL
-#> 54 https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_2mcover_3m_v2_metadata.xml
-#> 55   https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_cover_3m_v3_metadata.xml
-#> 56  https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_height_1m_v2_metadata.xml
-#> 57    https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_ht20_3m_v2_metadata.xml
-#> 58    https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_ht80_3m_v4_metadata.xml
-#> 59      https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_landcover_1m_v4_metadata.xml
-#> 60   https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_ndvi_oct2017_1m_v1_metadata.xml
-#> 61  https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_ndvi_sept2019_1m_v2_metadata.xml
-#> 73             https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/basemaps/UG_canopy_basemap_v3_metadata.xml
-#> 74          https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/basemaps/UG_landcover_basemap_v3_metadata.xml
 ```

@@ -42,5 +42,5 @@ sdp_cat <- get_sdp_catalog(domains="UG",
                            types="Vegetation",
                            deprecated=FALSE,
                            return_stac=FALSE)
-sdp_cat
+sdp_cat[,1:5]
 ```
