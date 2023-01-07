@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # rSDP
 
 <!-- badges: start -->
+`r lifecycle::badge('experimental')`
 <!-- badges: end -->
 
 The rSDP package provides a simplified interface for discovering, querying, and subsetting data products that are incorporated into the RMBL Spatial Data Platform. The RMBL SDP provides a set of curated, high-resolution, and high-fidelity geospatial datasets for a set of domains in Western Colorado (USA) in the vicinity of [Rocky Mountain Biological Laboratory](https://rmbl.org). For more information about the RMBL SDP [see here](https://www.rmbl.org/scientists/resources/spatial-data-platform/).
@@ -31,16 +32,25 @@ You can install the development version of rSDP from [GitHub](https://github.com
 devtools::install_github("rmbl-sdp/rSDP")
 ```
 
-## Discovering Data
+## Discovering Data and Metadata
 
-The package provides functions `get_sdp_catalog()`, and `get_sdp_template()` that download information about what datasets are currently available and what their spatial attributes are.
+The package provides functions `sdp_get_catalog()`, and `sdp_get_metadata()` that download information about what datasets are currently available and what their spatial attributes are.
 
 ```{r example}
 library(rSDP)
 ## Gets entries for vegetation data products in the Upper Gunnison (UG) domain.
-sdp_cat <- get_sdp_catalog(domains="UG", 
+sdp_cat <- sdp_get_catalog(domains="UG", 
                            types="Vegetation",
                            deprecated=FALSE,
                            return_stac=FALSE)
 sdp_cat[,1:5]
+```
+
+```{r example2}
+## Grabs detailed metadata for a specific dataset.
+item_meta <- sdp_get_metadata(catalog_id="R1D001",return_list=TRUE)
+
+## Prints the detailed description.
+item_description <- item_meta$qgis$abstract[[1]]
+print(item_description)
 ```

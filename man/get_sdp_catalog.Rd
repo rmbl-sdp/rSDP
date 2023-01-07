@@ -6,9 +6,10 @@
 \usage{
 get_sdp_catalog(
   domains = c("UG", "UER", "GT"),
-  types = c("Mask", "Topo", "Vegetation", "Planning", "Radiation", "Snow", "Imagery",
-    "Supplemental"),
-  releases = c("Basemaps", "Release1", "Release2", "Release3"),
+  types = c("Mask", "Topo", "Vegetation", "Hydro", "Planning", "Radiation", "Snow",
+    "Imagery", "Supplemental"),
+  releases = c("Basemaps", "Release1", "Release2", "Release3", "Release4"),
+  timeseries_types = c("Single", "Annual", "Seasonal", "Monthly", "Daily"),
   deprecated = FALSE,
   return_stac = FALSE
 )
@@ -20,12 +21,14 @@ get_sdp_catalog(
 
 \item{releases}{Which release (group) of data products to return.}
 
+\item{timeseries_types}{Some datasets are structured as single datasets (e.g. \code{Single}), and others are time-series with various periods (e.g.\code{Monthly}).}
+
 \item{deprecated}{Should older versions of datasets be returned, or just the latest version?}
 
 \item{return_stac}{NOT IMPLEMENTED: Should the results be returned as a Spatio-temporal Asset Catalog? Otherwise return and ordinary data frame.}
 }
 \value{
-
+A data frame containing basic catalog information for the matched data products.
 }
 \description{
 Discover SDP data by downloading catalog information.
