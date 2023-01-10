@@ -2,4 +2,5 @@
 
 export(sdp_get_catalog)
 export(sdp_get_metadata)
+export(sdp_get_raster)
 importFrom(lifecycle,deprecated)

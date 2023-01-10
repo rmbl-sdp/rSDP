@@ -30,7 +30,7 @@ You can install the development version of rSDP from
 devtools::install_github("rmbl-sdp/rSDP")
 ```
 
-## Discovering Data and Metadata
+## Discovering SDP Data and Metadata
 
 The package provides functions `sdp_get_catalog()`, and
 `sdp_get_metadata()` that download information about what datasets are

@@ -15,11 +15,11 @@
 #' @examples
 #'
 #' ## Gets information on all current datasets.
-#' sdp_cat <- get_sdp_catalog()
+#' sdp_cat <- sdp_get_catalog()
 #' str(sdp_cat)
 #'
 #' ## Gets a subset of catalog entries for the Upper Gunnison (UG) domain.
-#' sdp_sub <- get_sdp_catalog(domains="UG", types="Vegetation",
+#' sdp_sub <- sdp_get_catalog(domains="UG", types="Vegetation",
 #'                           deprecated=FALSE,return_stac=FALSE)
 #' sdp_sub
 #'
@@ -54,7 +54,7 @@ sdp_get_catalog <- function(domains=c("UG","UER","GT"),
   return(cat_filt)
 }
 
-#' Download geospatial metadata for SDP Datasets.
+#' Download detailed geospatial metadata for SDP Datasets.
 #'
 #' @param catalog_id The unique Catalog ID code for the desired dataset.
 #' @param return_list Logical. If `TRUE`, then the output is parsed as an R list object.
