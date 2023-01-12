@@ -1,7 +1,7 @@
 #' Create an R object representing an SDP cloud-based dataset.
 #'
 #' @param catalog_id A valid catalog number for an SDP dataset. This is in the `CatalogID` field for information returned by `sdp_get_catalog()`.
-#' @param url A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset.
+#' @param url A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either `catalog_id` or `url`, but not both.
 #' @param years For time-series data, a numeric vector specifying which years to return. The default `NULL` returns all available years.
 #' @param ... Other arguments to pass to the `terra::rast()` function.
 #'
