@@ -29,7 +29,7 @@ sdp_get_catalog <- function(domains=c("UG","UER","GT"),
                                     "Imagery","Supplemental"),
                             releases=c("Basemaps","Release1","Release2",
                                        "Release3","Release4"),
-                            timeseries_types=c("Single","Annual","Seasonal",
+                            timeseries_types=c("Single","Yearly","Seasonal",
                                                "Monthly","Daily"),
                             deprecated=FALSE,return_stac=FALSE){
 

@@ -18,7 +18,7 @@
 #' landcover <- sdp_get_raster(lc_id)
 #' landcover
 #'
-sdp_get_raster <- function(catalog_id=NULL,url=NULL,...){
+sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,...){
 
   stopifnot(is.null(catalog_id) | is.null(url))
   stopifnot(class(catalog_id) == "character" | class(url) == "character")
@@ -28,10 +28,18 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,...){
   if(class(catalog_id)=="character"){
     cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))
     cat_line <- cat[cat$CatalogID==catalog_id,]
-    cat_url <- cat_line$Data.URL
     raster_path <- paste0("/vsicurl/",cat_url)
-    raster <- terra::rast(raster_path,...)
-    return(raster)
+    if(!is.null(years)){
+      cat_url <- cat_line$Data.URL
+      cat_years <- cat_line$MinYear:cat_line$MaxYear
+      years_cat <- years[years %in% cat_years]
+      raster_path <- lapply(years_cat, fun=function(x) {gsub("{year}",x,raster_path,fixed=TRUE)})
+      raster <- terra::rast(raster_path,...)
+      return(raster)
+    }else{
+      raster <- terra::rast(raster_path,...)
+      return(raster)
+    }
   }else if(class(url)=="character"){
     url_start <- substr(url,1,8)
     if(url_start=="https://"){
@@ -46,5 +54,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,...){
   }
 
 }
-sdp_subset_raster <- function(raster,vector,vector_crs){}
-sdp_extract_timeseries <- function(raster,vector,vector_crs){}
+sdp_extract_timeseries <- function(catalog_id,url_template){
+
+}
+
