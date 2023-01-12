@@ -28,15 +28,33 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,...){
   if(class(catalog_id)=="character"){
     cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))
     cat_line <- cat[cat$CatalogID==catalog_id,]
+    cat_url <- cat_line$Data.URL
     raster_path <- paste0("/vsicurl/",cat_url)
-    if(!is.null(years)){
+
+    if(!is.null(years) & cat_line$TimeSeriesType=="Yearly"){
       cat_url <- cat_line$Data.URL
       cat_years <- cat_line$MinYear:cat_line$MaxYear
       years_cat <- years[years %in% cat_years]
-      raster_path <- lapply(years_cat, fun=function(x) {gsub("{year}",x,raster_path,fixed=TRUE)})
+
+      if(length(years_cat)==0){
+        stop(paste("No dataset available for any specified years. Available years are",
+                   paste(cat_years,collapse=" ")))
+      }else if((length(years_cat) < length(years)) & length(years_cat) > 0){
+        warning(paste("No dataset available for some specified years. \n Returning data for",years_cat))
+      }
+
+      raster_path <- unlist(lapply(years_cat, FUN=function(x) {gsub("{year}",x,raster_path,fixed=TRUE)}))
       raster <- terra::rast(raster_path,...)
+      names(raster) <- years_cat
       return(raster)
-    }else{
+
+    }else if(is.null(years) & cat_line$TimeSeriesType=="Yearly"){
+      cat_years <- cat_line$MinYear:cat_line$MaxYear
+      raster_path <- unlist(lapply(cat_years, FUN=function(x) {gsub("{year}",x,raster_path,fixed=TRUE)}))
+      raster <- terra::rast(raster_path,...)
+      names(raster) <- cat_years
+      return(raster)
+    }else if(cat_line$TimeSeriesType=="Single"){
       raster <- terra::rast(raster_path,...)
       return(raster)
     }
