@@ -6,13 +6,13 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The rSDP package provides a simplified interface for discovering,
-querying, and subsetting data products that are incorporated into the
-RMBL Spatial Data Platform. The RMBL SDP provides a set of curated,
-high-resolution, and high-fidelity geospatial datasets for a set of
-domains in Western Colorado (USA) in the vicinity of [Rocky Mountain
-Biological Laboratory](https://rmbl.org). For more information about the
-RMBL SDP [see
+The rSDP package provides a simple interface for discovering, querying,
+and subsetting data products that are incorporated into the RMBL Spatial
+Data Platform. The RMBL SDP provides a set of curated, high-resolution,
+and high-fidelity geospatial datasets for a set of domains in Western
+Colorado (USA) in the vicinity of [Rocky Mountain Biological
+Laboratory](https://rmbl.org). For more information about the RMBL SDP
+[see
 here](https://www.rmbl.org/scientists/resources/spatial-data-platform/).
 
 SDP data products are provided as geospatial raster datasets in
@@ -66,3 +66,18 @@ item_description <- item_meta$qgis$abstract[[1]]
 print(item_description)
 #> [1] "This map represents estimated stream flowlines from a hydrologically corrected digital elevation model. The lines were derived in GRASS GIS using a multi-direction algorithm that allows channel braiding. Each stream segment is identified by a unique integer. Stream lines were delineated for drainage areas greater than 512000 square meters.\n"
 ```
+
+## Accessing SDP data in the cloud.
+
+The function `sdp_get_raster()`, creates R representations of
+cloud-based datasets that can be used for further processing, returning
+a `SpatRaster` which can be further manipulated using functions in the
+`terra` package.
+
+``` r
+## Grabs detailed metadata for a specific dataset.
+dem <- sdp_get_raster(catalog_id="R3D009")
+terra::plot(dem)
+```
+
+<img src="man/figures/README-example3-1.png" width="100%" />
