@@ -9,7 +9,7 @@ sdp_get_catalog(
   types = c("Mask", "Topo", "Vegetation", "Hydro", "Planning", "Radiation", "Snow",
     "Imagery", "Supplemental"),
   releases = c("Basemaps", "Release1", "Release2", "Release3", "Release4"),
-  timeseries_types = c("Single", "Annual", "Seasonal", "Monthly", "Daily"),
+  timeseries_types = c("Single", "Yearly", "Seasonal", "Monthly", "Daily"),
   deprecated = FALSE,
   return_stac = FALSE
 )
