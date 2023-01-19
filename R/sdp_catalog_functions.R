@@ -25,7 +25,7 @@
 #'
 sdp_get_catalog <- function(domains=c("UG","UER","GT"),
                             types=c("Mask","Topo","Vegetation","Hydro",
-                                    "Planning","Radiation","Snow",
+                                    "Planning","Radiation","Snow","Climate",
                                     "Imagery","Supplemental"),
                             releases=c("Basemaps","Release1","Release2",
                                        "Release3","Release4"),
@@ -35,7 +35,7 @@ sdp_get_catalog <- function(domains=c("UG","UER","GT"),
 
   sdp_domains <- c("UG","UER","GT")
   sdp_types <- c("Mask","Topo","Vegetation", "Hydro",
-                 "Planning","Radiation","Snow","Imagery","Supplemental")
+                 "Planning","Radiation","Snow","Climate","Imagery","Supplemental")
   sdp_releases <- c("Basemaps","Release1","Release2","Release3","Release4")
   sdp_tstypes <- c("Single","Annual","Seasonal","Monthly","Daily")
   sdp_cat_url <- "https://www.rmbl.org/wp-content/uploads/2021/04/SDP_product_table_4_26_2021.csv"

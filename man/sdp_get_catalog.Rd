@@ -7,7 +7,7 @@
 sdp_get_catalog(
   domains = c("UG", "UER", "GT"),
   types = c("Mask", "Topo", "Vegetation", "Hydro", "Planning", "Radiation", "Snow",
-    "Imagery", "Supplemental"),
+    "Climate", "Imagery", "Supplemental"),
   releases = c("Basemaps", "Release1", "Release2", "Release3", "Release4"),
   timeseries_types = c("Single", "Yearly", "Seasonal", "Monthly", "Daily"),
   deprecated = FALSE,

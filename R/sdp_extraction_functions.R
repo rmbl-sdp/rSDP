@@ -1,8 +1,10 @@
 #' Create an R object representing an SDP cloud-based dataset.
 #'
-#' @param catalog_id A valid catalog number for an SDP dataset. This is in the `CatalogID` field for information returned by `sdp_get_catalog()`.
-#' @param url A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either `catalog_id` or `url`, but not both.
-#' @param years For time-series data, a numeric vector specifying which years to return. The default `NULL` returns all available years.
+#' @param catalog_id character. A single valid catalog number for an SDP dataset. This is in the `CatalogID` field for information returned by `sdp_get_catalog()`.
+#' @param url character. A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either `catalog_id` or `url`, but not both.
+#' @param years numeric. For annual time-series data, a numeric vector specifying which years to return. The default `NULL` returns all available years.
+#' @param date_start class `Date`. For daily time-series data, the first day of data to return.
+#' @param date_end class `Date`. For daily time-series data, the last day of data to return.
 #' @param ... Other arguments to pass to the `terra::rast()` function.
 #'
 #' @details Files headers are read from cloud-based datasets using the `terra` package, but the full dataset is not downloaded locally. Instead `terra` uses the web-based file system embedded in GDAL (VSICURL) to access datasets on the cloud. For large datasets and slow network connections, the function might take up to a minute to complete.
@@ -19,12 +21,13 @@
 #' landcover <- sdp_get_raster(lc_id)
 #' landcover
 #'
-sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,...){
+sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,date_start=NULL,date_end=NULL,...){
 
-  stopifnot(is.null(catalog_id) | is.null(url))
+  stopifnot("Please specify either catalog_id or url, not both."=is.null(catalog_id) | is.null(url))
   stopifnot(class(catalog_id) == "character" | class(url) == "character")
-  stopifnot(length(catalog_id) %in% c(0,1) & length(url) %in% c(0,1))
-  stopifnot(length(c(catalog_id,url)) == 1)
+  stopifnot("Please specify a single Catalog ID or URL."=length(catalog_id) %in% c(0,1) & length(url) %in% c(0,1))
+  stopifnot("Please specify a single Catalog ID or URL."=length(c(catalog_id,url)) == 1)
+  stopifnot("Date ranges must be class `Date` if specified."=(is.null(date_start) & is.null(date_end)) | (class(date_start)=="Date" & class(date_end)=="Date"))
 
   if(class(catalog_id)=="character"){
     cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))
@@ -47,6 +50,9 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,...){
       print(paste("Returning dataset with",length(years_cat),"layers be patient..."))
       raster <- terra::rast(raster_path,...)
       names(raster) <- years_cat
+      terra::crs(raster) <- "EPSG:32613"
+      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
+      attr(raster,"DataOffset") <- cat_line$DataOffset
       return(raster)
 
     }else if(is.null(years) & cat_line$TimeSeriesType=="Yearly"){
@@ -55,9 +61,40 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,...){
       print(paste("Returning dataset with",length(cat_years),"layers, be patient..."))
       raster <- terra::rast(raster_path,...)
       names(raster) <- cat_years
+      terra::crs(raster) <- "EPSG:32613"
+      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
+      attr(raster,"DataOffset") <- cat_line$DataOffset
+      return(raster)
+    }else if(!is.null(date_start) & !is.null(date_end) & cat_line$TimeSeriesType=="Daily"){
+      cat_days <- seq(as.Date(cat_line$MinDate,format="%m/%d/%y"),as.Date(cat_line$MaxDate,format="%m/%d/%y"),by="day")
+      days_input <- seq(date_start,date_end,by="day")
+      days_overlap <- days_input[days_input %in% cat_days]
+      if(length(days_overlap)==0){
+        stop(paste("No data available for any requested days. Available days are", min(cat_days),"to",max(cat_days)))
+      }else if((length(days_overlap) < length(days_input)) & length(days_overlap) > 0){
+        warning(paste("No data available for some requested days. \n Returning data for",min(days_overlap),"to",max(days_overlap)))
+      }
+      years_overlap <- format(days_overlap,format="%Y")
+      doys_overlap <- format(days_overlap,format="%j")
+      days_df <- data.frame(raster_path,years_overlap,doys_overlap)
+      repl_fun <- function(x){
+        rep1 <- gsub("{year}",x[2],x[1],fixed=TRUE)
+        rep2 <- gsub("{day}",x[3],rep1,fixed=TRUE)
+        return(rep2)
+        }
+      raster_path_day <- apply(days_df,MARGIN=1,FUN=repl_fun)
+      print(paste("Returning dataset with",length(days_overlap),"layers, be patient..."))
+      raster <- terra::rast(raster_path_day,...)
+      names(raster) <- as.character(days_overlap)
+      terra::crs(raster) <- "EPSG:32613"
+      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
+      attr(raster,"DataOffset") <- cat_line$DataOffset
       return(raster)
     }else if(cat_line$TimeSeriesType=="Single"){
       raster <- terra::rast(raster_path,...)
+      terra::crs(raster) <- "EPSG:32613"
+      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
+      attr(raster,"DataOffset") <- cat_line$DataOffset
       return(raster)
     }
   }else if(class(url)=="character"){
@@ -65,6 +102,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,...){
     if(url_start=="https://"){
       raster_path <- paste0("/vsicurl/",url)
       raster <- terra::rast(raster_path,...)
+      terra::crs(raster) <- "EPSG:32613"
       return(raster)
     }else{
       errorCondition("A valid URL must start with 'https://'")
@@ -74,7 +112,113 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,...){
   }
 
 }
-sdp_extract_timeseries <- function(catalog_id,url_template){
 
+#' Extract SDP raster data at a set of locations.
+#'
+#' @param raster class `SpatRaster`. A raster dataset (class `terra::SpatRaster`) to extract data from.
+#' @param locations A vector dataset (class `terra::SpatVector` or `sf::sf`) containing points, lines, or polygons at which to sample the raster data.
+#' @param date_start class `Date`. If the raster dataset is a daily or monthly time-series, the minimum date of extracted data.
+#' @param date_end class `Date`. If the raster dataset is a daily or monthly time-series, the maximum date of extracted data.
+#' @param years numeric. If the raster dataset is an annual time-series, the years of data requested.
+#' @param unscale logical. Should the returned dataset be returned to it's original scale? Some data are rescaled for storage and access efficiency.
+#' @param catalog_id character. Alternative method of specifying which dataset to sample. NOT IMPLEMENTED YET.
+#' @param url_template character. Alternative method of specifying whic dataset to sample. NOT IMPLEMENTED YET.
+#' @param bind logical. Should the extracted data be bound to the inputs? If not, a data frame is returned with the ID field in common with input data.
+#' @param return_spatvector logical. Should the returned dataset be a vector dataset with retained geometry (class `terra::SpatVector`). If `FALSE` returns an ordinary data frame.
+#' @param method Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells
+#' @param ... other arguments to pass along to `terra::Extract()`
+#'
+#' @return a `data.frame` or `SpatVector` with extracted data. Each layer in the raster dataset is a column in the returned data.
+#'
+#' @export
+#'
+#' @examples
+#'
+#' ## Loads a raster.
+#' sdp_rast <- sdp_get_raster("R4D004",date_start=as.Date("2021-11-02"),date_end=as.Date("2021-11-03"))
+#'
+#' ## Sampling locations.
+#' location_pts <- data.frame(SiteName=c("Roaring Judy","Gothic","Galena Lake"),
+#'                           Lat=c(38.716995,38.958446,39.021644),
+#'                           Lon=c(-106.853186,-106.988934,-107.072569))
+#' location_sv <- terra::vect(location_pts,geom=c("Lon","Lat"),crs="EPSG:4327")
+#'
+#' ## Extract data for sampling locations.
+#' sdp_extr_sv <- sdp_extract_data(sdp_rast,location_sv,return_spatvector=TRUE)
+#' sdp_extr_sv
+#'
+#' ## Can also return a data frame.
+#' sdp_extr_df <- sdp_extract_data(sdp_rast,location_sv,return_spatvector=TRUE)
+#' sdp_extr_df
+sdp_extract_data <- function(raster,locations, date_start=NULL,
+                             date_end=NULL,years=NULL,unscale=TRUE,
+                             catalog_id=NULL,url_template=NULL,
+                             bind=TRUE, return_spatvector=TRUE,
+                             method="bilinear", ...){
+
+   stopifnot("Raster must have `DataOffset`, and \
+              `DataScaleFactor` attributes if `unscale==TRUE`."=(unscale==FALSE |
+             (unscale==TRUE & all(c("DataOffset","DataScaleFactor") %in%
+                                    names(attributes(raster))))))
+   stopifnot("Raster must be a daily time-series with layer names representing \
+             dates if `date_start` or `date_end` are specified"=
+             (is.null(date_start) & is.null(date_end)) | all(!is.na(as.Date(names(raster),format="%Y-%m-%d"))))
+   stopifnot("Raster must be an annual time-series with layer names representing \
+             years if `years` are specified"=
+             is.null(years) | all(names(raster) %in% as.character(1900:2100)))
+
+    if(!is.null(years)){
+      years_overlap <- years[years %in% as.numeric(names(raster))]
+      if(length(years_overlap)==0){
+        stop(paste("No raster layers match any specified years. Available years are",
+                   paste(names(raster),collapse=" ")))
+      }else if((length(years_overlap) < length(years)) & length(years_overlap) > 0){
+        warning(paste("No layer matches some specified years. \n Returning data for",
+                      paste(years_overlap,collapse=" ")))
+      }
+      raster <- raster[[as.character(years_overlap)]]
+    }else if(!is.null(date_start) & !is.null(date_end)){
+      day_seq <- seq(date_start,date_end,by="day")
+      rast_days <- as.Date(names(raster))
+      days_overlap <- day_seq[day_seq %in% rast_days]
+      if(length(days_overlap)==0){
+        stop(paste("No raster layers match any specified dates. Available dates are",
+                   paste(names(raster),collapse=" ")))
+      }else if(length(days_overlap) < length(day_seq) & length(days_overlap) > 0){
+        warning(paste("No layer matches some specified days. \n Returning data for",paste(days_overlap,collapse=" ")))
+      }
+      raster <- raster[[as.character(days_overlap)]]
+    }
+
+    if('sf' %in% class(locations)){
+      locations <- terra::vect(locations)
+    }
+
+    if(terra::crs(locations) != terra::crs(raster)){
+      print(paste("Re-projecting locations to coordinate system of the raster."))
+      locations <- terra::project(locations, y="EPSG:32613")
+    }
+    print(paste("Extracting data at", terra::nrow(locations),"locations for",
+                terra::nlyr(raster), "raster layers."))
+    extracted <- terra::extract(x=raster, y=locations, bind=FALSE, method=method, ...)
+    if(unscale==TRUE){
+      offset <- attr(raster,"DataOffset")
+      scale <- attr(raster,"DataScaleFactor")
+      if(scale==0){
+        warning("Scale factor cannot be zero, ignoring scale...")
+        extracted[,2:ncol(extracted)] <- (extracted[,2:ncol(extracted)] + offset)
+      }else{
+        extracted[,2:ncol(extracted)] <- (extracted[,2:ncol(extracted)] + offset) / scale
+      }
+    }
+    if(bind==TRUE & return_spatvector==FALSE){
+      extracted <- as.data.frame(cbind(locations,extracted))
+    }else if(bind==TRUE & return_spatvector==TRUE){
+      extracted <- cbind(locations,extracted)
+    }else if(bind==FALSE & return_spatvector==TRUE){
+      warning("Function will always return a data frame if `bind=FALSE`.")
+    }
+    print(paste("Extraction complete."))
+    return(extracted)
 }
 

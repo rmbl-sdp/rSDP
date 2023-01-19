@@ -4,14 +4,25 @@
 \alias{sdp_get_raster}
 \title{Create an R object representing an SDP cloud-based dataset.}
 \usage{
-sdp_get_raster(catalog_id = NULL, url = NULL, years = NULL, ...)
+sdp_get_raster(
+  catalog_id = NULL,
+  url = NULL,
+  years = NULL,
+  date_start = NULL,
+  date_end = NULL,
+  ...
+)
 }
 \arguments{
-\item{catalog_id}{A valid catalog number for an SDP dataset. This is in the \code{CatalogID} field for information returned by \code{sdp_get_catalog()}.}
+\item{catalog_id}{character. A single valid catalog number for an SDP dataset. This is in the \code{CatalogID} field for information returned by \code{sdp_get_catalog()}.}
 
-\item{url}{A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either \code{catalog_id} or \code{url}, but not both.}
+\item{url}{character. A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either \code{catalog_id} or \code{url}, but not both.}
 
-\item{years}{For time-series data, a numeric vector specifying which years to return. The default \code{NULL} returns all available years.}
+\item{years}{numeric. For annual time-series data, a numeric vector specifying which years to return. The default \code{NULL} returns all available years.}
+
+\item{date_start}{class \code{Date}. For daily time-series data, the first day of data to return.}
+
+\item{date_end}{class \code{Date}. For daily time-series data, the last day of data to return.}
 
 \item{...}{Other arguments to pass to the \code{terra::rast()} function.}
 }

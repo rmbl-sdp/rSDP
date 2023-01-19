@@ -38,6 +38,7 @@ currently available and what their spatial attributes are.
 
 ``` r
 library(rSDP)
+
 ## Gets entries for vegetation data products in the Upper Gunnison (UG) domain.
 sdp_cat <- sdp_get_catalog(domains="UG", 
                            types="Vegetation",
@@ -75,9 +76,430 @@ a `SpatRaster` which can be further manipulated using functions in the
 `terra` package.
 
 ``` r
-## Grabs detailed metadata for a specific dataset.
+## Creates a `SpatRaster` object for a dataset.
 dem <- sdp_get_raster(catalog_id="R3D009")
 terra::plot(dem)
 ```
 
 <img src="man/figures/README-example3-1.png" width="100%" />
+
+The function `sdp_extract_data()` extracts samples from datasets at
+locations represented by points, lines, or polygons.
+
+``` r
+## Extracts values of an SDP dataset.
+elev <- sdp_get_raster(catalog_id="R3D009")
+slope <- sdp_get_raster(catalog_id="R3D012")
+
+location_df <- data.frame(SiteName=c("Roaring Judy","Gothic","Galena Lake"),
+                          Lat=c(38.716995,38.958446,39.021644),
+                          Lon=c(-106.853186,-106.988934,-107.072569))
+location_sv <- terra::vect(location_df,geom=c("Lon","Lat"),crs="EPSG:4327")
+
+dem_sample <- sdp_extract_data(raster=elev,locations=location_sv)
+#> [1] "Re-projecting locations to coordinate system of the raster."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+slope_sample <- sdp_extract_data(raster=slope,locations=dem_sample)
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+plot(slope_sample$UG_dem_3m_v1,slope_sample$UG_dem_slope_1m_v1,xlab="Elevation (m).",
+     ylab="Slope (degrees)")
+```
+
+<img src="man/figures/README-example4-1.png" width="100%" /> The
+`sdp_get_raster()` and `sdp_extract_data()` functions also provide some
+convenience features for subsetting time-series datasets by day or year.
+
+``` r
+## Connects to rasters from a temporal subset of daily data.
+tmax <- sdp_get_raster("R4D004",date_start=as.Date("2011-12-01"),date_end=as.Date("2011-12-30"))
+#> [1] "Returning dataset with 30 layers, be patient..."
+
+## Further subsets when extracting data
+tmax_sample <- sdp_extract_data(tmax,location_sv,date_start=as.Date("2011-12-01"),date_end=as.Date("2011-12-20"))
+#> [1] "Re-projecting locations to coordinate system of the raster."
+#> [1] "Extracting data at 3 locations for 20 raster layers."
+#> [1] "Extraction complete."
+tmax_df <- as.data.frame(tmax_sample)
+dates <- as.Date(names(tmax_df)[3:ncol(tmax_sample)])
+sites <- tmax_df$SiteName
+
+##Plots the result
+plot(dates,tmax_df[1,3:ncol(tmax_sample)],type="l",ylab="Tmax (C)",ylim=c(-15,7))
+points(dates,tmax_df[2,3:ncol(tmax_sample)],type="l",col=3)
+points(dates,tmax_df[3,3:ncol(tmax_sample)],type="l",col=4)
+legend("bottomright", legend=sites,col=c(1,3,4),bty="n",lty=1)
+```
+
+<img src="man/figures/README-example5-1.png" width="100%" />
+
+``` r
+
+##Retrieving rasters from a subset of years.
+snow_yearly <- sdp_get_raster("R4D001",years=c(2012,2019))
+#> [1] "Returning dataset with 2 layers be patient..."
+terra::plot(snow_yearly,range=c(60,230),maxcell=5000)
+```
+
+<img src="man/figures/README-example5-2.png" width="100%" />
+
+## Extracting data from large time-series datasets.
+
+For extracting subsets of large datasets, it’s sometimes a good idea to
+loop over small subsets rather than extracting from a single large
+raster object with many (sometimes hundreds) of layers.
+
+``` r
+## Extracts with a single call.
+start1 <- Sys.time()
+tmax1 <- sdp_get_raster("R4D004",date_start=as.Date("2008-10-01"),date_end=as.Date("2008-10-31"))
+#> [1] "Returning dataset with 31 layers, be patient..."
+
+tmax_extr1 <- sdp_extract_data(tmax1,location_sv)
+#> [1] "Re-projecting locations to coordinate system of the raster."
+#> [1] "Extracting data at 3 locations for 31 raster layers."
+#> [1] "Extraction complete."
+elapsed1 <- Sys.time() - start1
+elapsed1
+#> Time difference of 34.02551 secs
+
+## Loops over layers (different subset to avoid cacheing).
+start2 <- Sys.time()
+tmax2 <- sdp_get_raster("R4D004",date_start=as.Date("2009-10-01"),date_end=as.Date("2009-10-31"))
+#> [1] "Returning dataset with 31 layers, be patient..."
+locations_proj <- terra:::project(location_sv,"EPSG:32613")
+
+extr_list <- list()
+for(i in 1:terra::nlyr(tmax2)){
+  extr_dat <- sdp_extract_data(tmax2[[i]],locations_proj)[,3]
+  extr_list[[i]] <- extr_dat
+}
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+tmax_extr2 <- do.call(cbind,extr_list)
+elapsed2 <- Sys.time() - start2
+elapsed2
+#> Time difference of 49.2996 secs
+
+## Loops over creating the raster object itself. 
+## This is slower single threaded, but can be more easily made parallel.
+start3 <- Sys.time()
+days <- seq(as.Date("2010-10-01"),as.Date("2010-10-31"),by="day")
+extr_list3 <- list()
+for(i in 1:length(days)){
+  tmax3 <- sdp_get_raster("R4D004",date_start=days[i],date_end=days[i])
+  extr_dat <- sdp_extract_data(tmax3,locations_proj)[,3]
+  extr_list3[[i]] <- extr_dat
+}
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+tmax_extr3 <- do.call(cbind,extr_list3)
+elapsed3 <- Sys.time() - start3
+elapsed3
+#> Time difference of 1.238824 mins
+
+## Parallel extraction via foreach.
+library(foreach)
+#> Warning: package 'foreach' was built under R version 4.1.2
+library(doParallel)
+#> Warning: package 'doParallel' was built under R version 4.1.2
+#> Loading required package: iterators
+#> Warning: package 'iterators' was built under R version 4.1.2
+#> Loading required package: parallel
+
+start4 <- Sys.time()
+##cl <- parallel::makeCluster(4)
+##doParallel::registerDoParallel(cl)
+days <- seq(as.Date("2011-10-01"),as.Date("2011-10-31"),by="day")
+
+extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("terra","devtools")) %do% {
+  devtools::load_all() ## During package development.
+  tmax4 <- rSDP::sdp_get_raster("R4D004",date_start=days[i],date_end=days[i])
+  extr_dat <- rSDP::sdp_extract_data(tmax4,locations_proj)[,3]
+  (extr_dat)
+}
+#> Warning: package 'terra' was built under R version 4.1.2
+#> terra 1.6.17
+#> Loading required package: usethis
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+#> ℹ Loading rSDP
+#> [1] "Returning dataset with 1 layers, be patient..."
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+##parallel::stopCluster(cl)
+tmax_extr4 <- do.call(cbind,extr_list4)
+elapsed4 <- Sys.time() - start4
+elapsed4
+#> Time difference of 1.473763 mins
+```
