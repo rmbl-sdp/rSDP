@@ -10,6 +10,7 @@ sdp_get_raster(
   years = NULL,
   date_start = NULL,
   date_end = NULL,
+  verbose = TRUE,
   ...
 )
 }
@@ -23,6 +24,8 @@ sdp_get_raster(
 \item{date_start}{class \code{Date}. For daily time-series data, the first day of data to return.}
 
 \item{date_end}{class \code{Date}. For daily time-series data, the last day of data to return.}
+
+\item{verbose}{logical. Should the function print status and progress messages?}
 
 \item{...}{Other arguments to pass to the \code{terra::rast()} function.}
 }

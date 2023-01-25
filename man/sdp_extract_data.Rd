@@ -16,6 +16,7 @@ sdp_extract_data(
   bind = TRUE,
   return_spatvector = TRUE,
   method = "bilinear",
+  verbose = TRUE,
   ...
 )
 }
@@ -41,6 +42,8 @@ sdp_extract_data(
 \item{return_spatvector}{logical. Should the returned dataset be a vector dataset with retained geometry (class \code{terra::SpatVector}). If \code{FALSE} returns an ordinary data frame.}
 
 \item{method}{Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells}
+
+\item{verbose}{logical. Should the function print messages about the process?}
 
 \item{...}{other arguments to pass along to \code{terra::Extract()}}
 }

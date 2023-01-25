@@ -5,6 +5,7 @@
 #' @param years numeric. For annual time-series data, a numeric vector specifying which years to return. The default `NULL` returns all available years.
 #' @param date_start class `Date`. For daily time-series data, the first day of data to return.
 #' @param date_end class `Date`. For daily time-series data, the last day of data to return.
+#' @param verbose logical. Should the function print status and progress messages?
 #' @param ... Other arguments to pass to the `terra::rast()` function.
 #'
 #' @details Files headers are read from cloud-based datasets using the `terra` package, but the full dataset is not downloaded locally. Instead `terra` uses the web-based file system embedded in GDAL (VSICURL) to access datasets on the cloud. For large datasets and slow network connections, the function might take up to a minute to complete.
@@ -21,7 +22,8 @@
 #' landcover <- sdp_get_raster(lc_id)
 #' landcover
 #'
-sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,date_start=NULL,date_end=NULL,...){
+sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
+                           date_start=NULL,date_end=NULL, verbose=TRUE, ...){
 
   stopifnot("Please specify either catalog_id or url, not both."=is.null(catalog_id) | is.null(url))
   stopifnot(class(catalog_id) == "character" | class(url) == "character")
@@ -47,7 +49,9 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,date_start=NULL,d
         warning(paste("No dataset available for some specified years. \n Returning data for",years_cat))
       }
       raster_path <- unlist(lapply(years_cat, FUN=function(x) {gsub("{year}",x,raster_path,fixed=TRUE)}))
-      print(paste("Returning dataset with",length(years_cat),"layers be patient..."))
+      if(verbose==TRUE){
+        print(paste("Returning dataset with",length(years_cat),"layers be patient..."))
+      }
       raster <- terra::rast(raster_path,...)
       names(raster) <- years_cat
       terra::crs(raster) <- "EPSG:32613"
@@ -58,7 +62,9 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,date_start=NULL,d
     }else if(is.null(years) & cat_line$TimeSeriesType=="Yearly"){
       cat_years <- cat_line$MinYear:cat_line$MaxYear
       raster_path <- unlist(lapply(cat_years, FUN=function(x) {gsub("{year}",x,raster_path,fixed=TRUE)}))
-      print(paste("Returning dataset with",length(cat_years),"layers, be patient..."))
+      if(verbose==TRUE){
+        print(paste("Returning dataset with",length(cat_years),"layers, be patient..."))
+      }
       raster <- terra::rast(raster_path,...)
       names(raster) <- cat_years
       terra::crs(raster) <- "EPSG:32613"
@@ -83,7 +89,9 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,date_start=NULL,d
         return(rep2)
         }
       raster_path_day <- apply(days_df,MARGIN=1,FUN=repl_fun)
-      print(paste("Returning dataset with",length(days_overlap),"layers, be patient..."))
+      if(verbose==TRUE){
+        print(paste("Returning dataset with",length(days_overlap),"layers, be patient..."))
+      }
       raster <- terra::rast(raster_path_day,...)
       names(raster) <- as.character(days_overlap)
       terra::crs(raster) <- "EPSG:32613"
@@ -126,6 +134,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,date_start=NULL,d
 #' @param bind logical. Should the extracted data be bound to the inputs? If not, a data frame is returned with the ID field in common with input data.
 #' @param return_spatvector logical. Should the returned dataset be a vector dataset with retained geometry (class `terra::SpatVector`). If `FALSE` returns an ordinary data frame.
 #' @param method Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells
+#' @param verbose logical. Should the function print messages about the process?
 #' @param ... other arguments to pass along to `terra::Extract()`
 #'
 #' @return a `data.frame` or `SpatVector` with extracted data. Each layer in the raster dataset is a column in the returned data.
@@ -154,7 +163,7 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
                              date_end=NULL,years=NULL,unscale=TRUE,
                              catalog_id=NULL,url_template=NULL,
                              bind=TRUE, return_spatvector=TRUE,
-                             method="bilinear", ...){
+                             method="bilinear", verbose=TRUE, ...){
 
    stopifnot("Raster must have `DataOffset`, and \
               `DataScaleFactor` attributes if `unscale==TRUE`."=(unscale==FALSE |
@@ -172,7 +181,7 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
       if(length(years_overlap)==0){
         stop(paste("No raster layers match any specified years. Available years are",
                    paste(names(raster),collapse=" ")))
-      }else if((length(years_overlap) < length(years)) & length(years_overlap) > 0){
+      }else if((length(years_overlap) < length(years)) & length(years_overlap) > 0 & verbose==TRUE){
         warning(paste("No layer matches some specified years. \n Returning data for",
                       paste(years_overlap,collapse=" ")))
       }
@@ -184,7 +193,7 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
       if(length(days_overlap)==0){
         stop(paste("No raster layers match any specified dates. Available dates are",
                    paste(names(raster),collapse=" ")))
-      }else if(length(days_overlap) < length(day_seq) & length(days_overlap) > 0){
+      }else if(length(days_overlap) < length(day_seq) & length(days_overlap) > 0 & verbose==TRUE){
         warning(paste("No layer matches some specified days. \n Returning data for",paste(days_overlap,collapse=" ")))
       }
       raster <- raster[[as.character(days_overlap)]]
@@ -194,12 +203,14 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
       locations <- terra::vect(locations)
     }
 
-    if(terra::crs(locations) != terra::crs(raster)){
+    if(terra::crs(locations) != terra::crs(raster) & verbose==TRUE){
       print(paste("Re-projecting locations to coordinate system of the raster."))
       locations <- terra::project(locations, y="EPSG:32613")
     }
-    print(paste("Extracting data at", terra::nrow(locations),"locations for",
-                terra::nlyr(raster), "raster layers."))
+    if(verbose==TRUE){
+      print(paste("Extracting data at", terra::nrow(locations),"locations for",
+                  terra::nlyr(raster), "raster layers."))
+    }
     extracted <- terra::extract(x=raster, y=locations, bind=FALSE, method=method, ...)
     if(unscale==TRUE){
       offset <- attr(raster,"DataOffset")
@@ -218,7 +229,9 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
     }else if(bind==FALSE & return_spatvector==TRUE){
       warning("Function will always return a data frame if `bind=FALSE`.")
     }
-    print(paste("Extraction complete."))
+    if(verbose==TRUE){
+      print(paste("Extraction complete."))
+    }
     return(extracted)
 }
 
