@@ -81,7 +81,8 @@ dem <- sdp_get_raster(catalog_id="R3D009")
 terra::plot(dem)
 ```
 
-<img src="man/figures/README-example3-1.png" width="100%" />
+<img src="man/figures/README-example3-1.png" width="100%" /> \##
+Extracting samples of SDP data.
 
 The function `sdp_extract_data()` extracts samples from datasets at
 locations represented by points, lines, or polygons.
@@ -107,9 +108,64 @@ plot(slope_sample$UG_dem_3m_v1,slope_sample$UG_dem_slope_1m_v1,xlab="Elevation (
      ylab="Slope (degrees)")
 ```
 
-<img src="man/figures/README-example4-1.png" width="100%" /> The
-`sdp_get_raster()` and `sdp_extract_data()` functions also provide some
-convenience features for subsetting time-series datasets by day or year.
+<img src="man/figures/README-example4-1.png" width="100%" />
+
+With line or polygon locations `sdp_extract_data()` summarizes raster
+values by line or polygon. The default method computes the mean value
+for each polygon, but you can also specify other summary functions using
+the `sum_fun` argument.
+
+``` r
+slope <- sdp_get_raster(catalog_id="R3D012")
+
+location_poly <- data.frame(SiteName=c("Wet","Conifer","Rocky"),
+                            WKT=c("POLYGON ((327651 4313638,327620 4313727,327693 4313759, 327651 4313638))",
+                                   "POLYGON ((327340 4314059,327450 4314026,327418 4313970,327340 4314059))",
+                                   "POLYGON ((328193 4314314,328285 4314274,328244 4314223, 328193 4314314))"))
+location_poly_sv <- terra::vect(location_poly,geom="WKT",crs="EPSG:32613")
+
+slope_site_mean <- sdp_extract_data(raster=slope,locations=location_poly_sv)
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+slope_site_sd <- sdp_extract_data(raster=slope,locations=slope_site_mean,
+                                  sum_fun=sd,bind=TRUE)
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> [1] "Extraction complete."
+names(slope_site_sd) <- c("SiteName","ID","Slope_mean","ID2","Slope_sd")
+
+plot(slope_site_sd$Slope_mean,slope_site_sd$Slope_sd,xlab="Slope Mean (deg.)",
+     ylab="Slope Standard Deviation",pch="")
+text(slope_site_sd$Slope_mean,slope_site_sd$Slope_sd,labels=slope_site_sd$SiteName)
+```
+
+<img src="man/figures/README-example5-1.png" width="100%" /> You can
+also return all the cell values intersecting each line or polygon by
+specifying `sum_fun=NULL`. Passing the argument `exact=TRUE` with
+polygon features returns the proportion of each raster cell included in
+the polygon (useful for computing area-weighted means.)
+
+``` r
+slope_allcells <- sdp_extract_data(raster=slope,locations=slope_site_mean,
+                                  sum_fun=NULL,exact=TRUE,bind=FALSE)
+#> [1] "Extracting data at 3 locations for 1 raster layers."
+#> Warning in sdp_extract_data(raster = slope, locations = slope_site_mean, :
+#> Function will always return a data frame if `bind=FALSE`.
+#> [1] "Extraction complete."
+head(slope_allcells)
+#>   ID UG_dem_slope_1m_v1   fraction
+#> 1  1           4.609455 0.01733949
+#> 2  1           6.018766 0.34246161
+#> 3  1           9.753592 0.60725906
+#> 4  1           3.104769 0.06934668
+#> 5  1           6.362072 0.46575703
+#> 6  1           6.617933 0.88677505
+```
+
+## Working with raster time-series
+
+The `sdp_get_raster()` and `sdp_extract_data()` functions also provide
+some convenience features for subsetting time-series datasets by day or
+year.
 
 ``` r
 ## Connects to rasters from a temporal subset of daily data.
@@ -132,15 +188,17 @@ points(dates,tmax_df[3,3:ncol(tmax_sample)],type="l",col=4)
 legend("bottomright", legend=sites,col=c(1,3,4),bty="n",lty=1)
 ```
 
-<img src="man/figures/README-example5-1.png" width="100%" />
+<img src="man/figures/README-example7-1.png" width="100%" />
 
 ``` r
 
 ##Retrieving rasters from a subset of years.
 snow_yearly <- sdp_get_raster("R4D001",years=c(2012,2019))
 #> [1] "Returning dataset with 2 layers be patient..."
-#terra::plot(snow_yearly,range=c(60,230),maxcell=5000)
+terra::plot(snow_yearly,range=c(60,230))
 ```
+
+<img src="man/figures/README-example7-2.png" width="100%" />
 
 ## Extracting data from large time-series datasets.
 
@@ -205,7 +263,7 @@ extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("terra","devtools"))
   (extr_dat)
 }
 #> Warning: package 'terra' was built under R version 4.1.2
-#> terra 1.6.17
+#> terra 1.6.53
 #> Loading required package: usethis
 #> ℹ Loading rSDP
 #> ℹ Loading rSDP
@@ -247,8 +305,8 @@ timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Loo
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
 #>                        approach        timing
-#> 1                   Single Call 21.34864 secs
-#> 2    Looping sdp_extract_data() 40.00386 secs
-#> 3 Looping over sdp_get_raster() 58.16944 secs
-#> 4                       Foreach 63.89897 secs
+#> 1                   Single Call 17.31711 secs
+#> 2    Looping sdp_extract_data() 27.24529 secs
+#> 3 Looping over sdp_get_raster() 40.62688 secs
+#> 4                       Foreach 46.89118 secs
 ```

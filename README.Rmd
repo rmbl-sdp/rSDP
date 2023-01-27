@@ -64,6 +64,7 @@ The function `sdp_get_raster()`, creates R representations of cloud-based datase
 dem <- sdp_get_raster(catalog_id="R3D009")
 terra::plot(dem)
 ```
+## Extracting samples of SDP data.
 
 The function `sdp_extract_data()` extracts samples from datasets at locations represented by points, lines, or polygons.
 ```{r example4}
@@ -81,8 +82,40 @@ slope_sample <- sdp_extract_data(raster=slope,locations=dem_sample)
 plot(slope_sample$UG_dem_3m_v1,slope_sample$UG_dem_slope_1m_v1,xlab="Elevation (m).",
      ylab="Slope (degrees)")
 ```
-The `sdp_get_raster()` and `sdp_extract_data()` functions also provide some convenience features for subsetting time-series datasets by day or year.
+
+With line or polygon locations `sdp_extract_data()` summarizes raster values by line or polygon. The default method computes the mean value for each polygon, but you can also specify other summary functions using the `sum_fun` argument. 
+
 ```{r example5}
+slope <- sdp_get_raster(catalog_id="R3D012")
+
+location_poly <- data.frame(SiteName=c("Wet","Conifer","Rocky"),
+                            WKT=c("POLYGON ((327651 4313638,327620 4313727,327693 4313759, 327651 4313638))",
+                                   "POLYGON ((327340 4314059,327450 4314026,327418 4313970,327340 4314059))",
+                                   "POLYGON ((328193 4314314,328285 4314274,328244 4314223, 328193 4314314))"))
+location_poly_sv <- terra::vect(location_poly,geom="WKT",crs="EPSG:32613")
+
+slope_site_mean <- sdp_extract_data(raster=slope,locations=location_poly_sv)
+slope_site_sd <- sdp_extract_data(raster=slope,locations=slope_site_mean,
+                                  sum_fun=sd,bind=TRUE)
+names(slope_site_sd) <- c("SiteName","ID","Slope_mean","ID2","Slope_sd")
+
+plot(slope_site_sd$Slope_mean,slope_site_sd$Slope_sd,xlab="Slope Mean (deg.)",
+     ylab="Slope Standard Deviation",pch="")
+text(slope_site_sd$Slope_mean,slope_site_sd$Slope_sd,labels=slope_site_sd$SiteName)
+```
+You can also return all the cell values intersecting each line or polygon by specifying `sum_fun=NULL`. Passing the argument `exact=TRUE` with polygon features returns the proportion of each raster cell included in the polygon (useful for computing area-weighted means.)
+
+```{r example6}
+slope_allcells <- sdp_extract_data(raster=slope,locations=slope_site_mean,
+                                  sum_fun=NULL,exact=TRUE,bind=FALSE)
+head(slope_allcells)
+```
+
+## Working with raster time-series
+
+The `sdp_get_raster()` and `sdp_extract_data()` functions also provide some convenience features for subsetting time-series datasets by day or year.
+
+```{r example7}
 ## Connects to rasters from a temporal subset of daily data.
 tmax <- sdp_get_raster("R4D004",date_start=as.Date("2011-12-01"),date_end=as.Date("2011-12-30"))
 
@@ -100,14 +133,14 @@ legend("bottomright", legend=sites,col=c(1,3,4),bty="n",lty=1)
 
 ##Retrieving rasters from a subset of years.
 snow_yearly <- sdp_get_raster("R4D001",years=c(2012,2019))
-#terra::plot(snow_yearly,range=c(60,230),maxcell=5000)
+terra::plot(snow_yearly,range=c(60,230))
 ```
 
 ## Extracting data from large time-series datasets.
 
 For extracting subsets of large datasets, it's sometimes a good idea to loop over small subsets rather than extracting from a single large raster object with many (sometimes hundreds) of layers.
 
-```{r example6}
+```{r example8}
 ## Extracts with a single call.
 start1 <- Sys.time()
 tmax1 <- sdp_get_raster("R4D004",date_start=as.Date("2004-10-01"),date_end=as.Date("2004-10-31"))

@@ -133,7 +133,8 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
 #' @param url_template character. Alternative method of specifying whic dataset to sample. NOT IMPLEMENTED YET.
 #' @param bind logical. Should the extracted data be bound to the inputs? If not, a data frame is returned with the ID field in common with input data.
 #' @param return_spatvector logical. Should the returned dataset be a vector dataset with retained geometry (class `terra::SpatVector`). If `FALSE` returns an ordinary data frame.
-#' @param method Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells
+#' @param method Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells. Ignored if `locations` represent lines or points.
+#' @param sum_fun character or function. Function to use to summarize raster cells that overlap input features. Ignored if extracting by point.
 #' @param verbose logical. Should the function print messages about the process?
 #' @param ... other arguments to pass along to `terra::Extract()`
 #'
@@ -163,7 +164,8 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
                              date_end=NULL,years=NULL,unscale=TRUE,
                              catalog_id=NULL,url_template=NULL,
                              bind=TRUE, return_spatvector=TRUE,
-                             method="bilinear", verbose=TRUE, ...){
+                             method="bilinear", sum_fun="mean",
+                             verbose=TRUE,...){
 
    stopifnot("Raster must have `DataOffset`, and \
               `DataScaleFactor` attributes if `unscale==TRUE`."=(unscale==FALSE |
@@ -175,6 +177,10 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
    stopifnot("Raster must be an annual time-series with layer names representing \
              years if `years` are specified"=
              is.null(years) | all(names(raster) %in% as.character(1900:2100)))
+
+   if(terra::geomtype(locations) == "points"){
+     sum_fun <- NULL
+   }
 
     if(!is.null(years)){
       years_overlap <- years[years %in% as.numeric(names(raster))]
@@ -211,7 +217,7 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
       print(paste("Extracting data at", terra::nrow(locations),"locations for",
                   terra::nlyr(raster), "raster layers."))
     }
-    extracted <- terra::extract(x=raster, y=locations, bind=FALSE, method=method, ...)
+    extracted <- terra::extract(x=raster, y=locations, bind=FALSE, method=method, fun=sum_fun, ...)
     if(unscale==TRUE){
       offset <- attr(raster,"DataOffset")
       scale <- attr(raster,"DataScaleFactor")
@@ -222,7 +228,10 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
         extracted[,2:ncol(extracted)] <- (extracted[,2:ncol(extracted)] + offset) / scale
       }
     }
-    if(bind==TRUE & return_spatvector==FALSE){
+    if(bind==TRUE & is.null(sum_fun) & terra::geomtype(locations) != "points"){
+      warning("Cannot bind outputs to input features when returning all raster values (`sum_fun=NULL`).\n
+              Please specify a summary function such as `sum_fun='mean'` to bind inputs to outputs.")
+    }else if(bind==TRUE & return_spatvector==FALSE){
       extracted <- as.data.frame(cbind(locations,extracted))
     }else if(bind==TRUE & return_spatvector==TRUE){
       extracted <- cbind(locations,extracted)
