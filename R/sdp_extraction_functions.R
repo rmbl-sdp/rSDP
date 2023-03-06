@@ -98,6 +98,26 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
       attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
       attr(raster,"DataOffset") <- cat_line$DataOffset
       return(raster)
+    }else if(is.null(date_start) & is.null(date_end) & cat_line$TimeSeriesType=="Daily"){
+      cat_days <- seq(as.Date(cat_line$MinDate,format="%m/%d/%y"),as.Date(cat_line$MaxDate,format="%m/%d/%y"),by="day")[1:30]
+      years_overlap <- format(cat_days,format="%Y")
+      doys_overlap <- format(cat_days,format="%j")
+      days_df <- data.frame(raster_path,years_overlap,doys_overlap)
+      repl_fun <- function(x){
+        rep1 <- gsub("{year}",x[2],x[1],fixed=TRUE)
+        rep2 <- gsub("{day}",x[3],rep1,fixed=TRUE)
+        return(rep2)
+      }
+      raster_path_day <- apply(days_df,MARGIN=1,FUN=repl_fun)
+      if(verbose==TRUE){
+        print(paste("No time bounds set for daily data, returning the first 30 layers. Specify StartDate or EndDate to retrieve larger time-series..."))
+      }
+      raster <- terra::rast(raster_path_day,...)
+      names(raster) <- as.character(cat_days)
+      terra::crs(raster) <- "EPSG:32613"
+      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
+      attr(raster,"DataOffset") <- cat_line$DataOffset
+      return(raster)
     }else if(cat_line$TimeSeriesType=="Single"){
       raster <- terra::rast(raster_path,...)
       terra::crs(raster) <- "EPSG:32613"
