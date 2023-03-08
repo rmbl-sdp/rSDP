@@ -1,0 +1,6 @@
+url: https://rmbl-sdp.github.io/rSDP
+template:
+  bootstrap: 5
+  bootswatch: united
+  theme: breeze-light
+
