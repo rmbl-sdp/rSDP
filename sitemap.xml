@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/404.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/LICENSE.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/authors.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/index.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/reference/rSDP-package.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/reference/replace_strngs.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/reference/sdp_extract_data.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/reference/sdp_get_catalog.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/reference/sdp_get_metadata.html</loc>
+  </url>
+  <url>
+    <loc>https://rmbl-sdp.github.io/rSDP/reference/sdp_get_raster.html</loc>
+  </url>
+</urlset>
