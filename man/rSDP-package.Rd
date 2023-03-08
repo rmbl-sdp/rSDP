@@ -12,6 +12,7 @@ The rSDP package provides a simplified interface for discovering, querying, and 
 Useful links:
 \itemize{
   \item \url{https://github.com/rmbl-sdp/rSDP}
+  \item \url{https://rmbl-sdp.github.io/rSDP}
   \item Report bugs at \url{https://github.com/rmbl-sdp/rSDP/issues}
 }
 

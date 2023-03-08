@@ -38,7 +38,9 @@ sdp_get_catalog <- function(domains=c("UG","UER","GT"),
                  "Planning","Radiation","Snow","Climate","Imagery","Supplemental")
   sdp_releases <- c("Basemaps","Release1","Release2","Release3","Release4")
   sdp_tstypes <- c("Single","Annual","Seasonal","Monthly","Daily")
-  sdp_cat_url <- "https://www.rmbl.org/wp-content/uploads/2021/04/SDP_product_table_4_26_2021.csv"
+
+  #utils::data("catalog",package="rSDP",envir=environment())
+  ##sdp_cat_url <- "https://www.rmbl.org/wp-content/uploads/2021/04/SDP_product_table_4_26_2021.csv"
 
   stopifnot(all(domains %in% sdp_domains))
   stopifnot(all(types %in% sdp_types))
@@ -47,10 +49,11 @@ sdp_get_catalog <- function(domains=c("UG","UER","GT"),
   stopifnot(is.logical(return_stac) & length(return_stac==1))
   stopifnot()
 
-  cat <- utils::read.csv(sdp_cat_url)
-  cat_filt <- cat[cat$Domain %in% domains & cat$Type %in% types &
-                  cat$Release %in% releases & cat$Deprecated %in% deprecated &
-                  cat$TimeSeriesType %in% timeseries_types,]
+  #catalog <- rSDP:::catalog
+  catalog <- get0("catalog", envir = asNamespace("rSDP"))
+  cat_filt <- catalog[catalog$Domain %in% domains & catalog$Type %in% types &
+                  catalog$Release %in% releases & catalog$Deprecated %in% deprecated &
+                  catalog$TimeSeriesType %in% timeseries_types,]
   return(cat_filt)
 }
 
