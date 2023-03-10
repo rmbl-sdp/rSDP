@@ -10,7 +10,6 @@ sdp_extract_data(
   date_start = NULL,
   date_end = NULL,
   years = NULL,
-  unscale = TRUE,
   catalog_id = NULL,
   url_template = NULL,
   bind = TRUE,
@@ -31,8 +30,6 @@ sdp_extract_data(
 \item{date_end}{class \code{Date}. If the raster dataset is a daily or monthly time-series, the maximum date of extracted data.}
 
 \item{years}{numeric. If the raster dataset is an annual time-series, the years of data requested.}
-
-\item{unscale}{logical. Should the returned dataset be returned to it's original scale? Some data are rescaled for storage and access efficiency.}
 
 \item{catalog_id}{character. Alternative method of specifying which dataset to sample. NOT IMPLEMENTED YET.}
 

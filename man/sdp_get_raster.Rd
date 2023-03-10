@@ -2,7 +2,7 @@
 % Please edit documentation in R/sdp_extraction_functions.R
 \name{sdp_get_raster}
 \alias{sdp_get_raster}
-\title{Create an R object representing an SDP cloud-based dataset.}
+\title{Create an R object representing an SDP dataset.}
 \usage{
 sdp_get_raster(
   catalog_id = NULL,
@@ -11,6 +11,9 @@ sdp_get_raster(
   date_start = NULL,
   date_end = NULL,
   verbose = TRUE,
+  download_files = FALSE,
+  download_path = NULL,
+  overwrite = FALSE,
   ...
 )
 }
@@ -27,16 +30,23 @@ sdp_get_raster(
 
 \item{verbose}{logical. Should the function print status and progress messages?}
 
+\item{download_files}{logical. Should the function download files to disk? The default \code{FALSE} creates cloud-based representations of the data without downloading.}
+
+\item{download_path}{character. Destination path for downloaded files. This can be a relative or absolute path.}
+
+\item{overwrite}{logical. Should files with the same names as the datasets be overwritten in \code{download_path}? If \code{FALSE}, the function will skip downloading files that already exist in the destination.}
+
 \item{...}{Other arguments to pass to the \code{terra::rast()} function.}
 }
 \value{
 An R object (class \code{terra::SpatRaster}) representing the raster dataset.
 }
 \description{
-Create an R object representing an SDP cloud-based dataset.
+Create an R object representing an SDP dataset.
 }
 \details{
-Files headers are read from cloud-based datasets using the \code{terra} package, but the full dataset is not downloaded locally. Instead \code{terra} uses the web-based file system embedded in GDAL (VSICURL) to access datasets on the cloud. For large datasets and slow network connections, the function might take up to a minute to complete.
+Files headers are read from cloud-based datasets using the \code{terra} package, but the full dataset is not downloaded locally unless \code{download_files=TRUE}. Instead \code{terra} uses the web-based file system embedded in GDAL (VSICURL) to access datasets on the cloud. For large datasets and slow network connections, the function might take up to a minute to complete.
+Specifying local downloads \code{download_files=TRUE} might be more efficient for multi-layer data, but can take up lots of disk space.
 }
 \examples{
 ## Lookup catalog number for a dataset.

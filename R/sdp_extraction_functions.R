@@ -1,4 +1,4 @@
-#' Create an R object representing an SDP cloud-based dataset.
+#' Create an R object representing an SDP dataset.
 #'
 #' @param catalog_id character. A single valid catalog number for an SDP dataset. This is in the `CatalogID` field for information returned by `sdp_get_catalog()`.
 #' @param url character. A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either `catalog_id` or `url`, but not both.
@@ -6,9 +6,13 @@
 #' @param date_start class `Date`. For daily time-series data, the first day of data to return.
 #' @param date_end class `Date`. For daily time-series data, the last day of data to return.
 #' @param verbose logical. Should the function print status and progress messages?
+#' @param download_files logical. Should the function download files to disk? The default `FALSE` creates cloud-based representations of the data without downloading.
+#' @param download_path character. Destination path for downloaded files. This can be a relative or absolute path.
+#' @param overwrite logical. Should files with the same names as the datasets be overwritten in `download_path`? If `FALSE`, the function will skip downloading files that already exist in the destination.
 #' @param ... Other arguments to pass to the `terra::rast()` function.
 #'
-#' @details Files headers are read from cloud-based datasets using the `terra` package, but the full dataset is not downloaded locally. Instead `terra` uses the web-based file system embedded in GDAL (VSICURL) to access datasets on the cloud. For large datasets and slow network connections, the function might take up to a minute to complete.
+#' @details Files headers are read from cloud-based datasets using the `terra` package, but the full dataset is not downloaded locally unless `download_files=TRUE`. Instead `terra` uses the web-based file system embedded in GDAL (VSICURL) to access datasets on the cloud. For large datasets and slow network connections, the function might take up to a minute to complete.
+#' Specifying local downloads `download_files=TRUE` might be more efficient for multi-layer data, but can take up lots of disk space.
 #'
 #' @return An R object (class `terra::SpatRaster`) representing the raster dataset.
 #' @export
@@ -23,13 +27,15 @@
 #' landcover
 #'
 sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
-                           date_start=NULL,date_end=NULL, verbose=TRUE, ...){
+                           date_start=NULL,date_end=NULL, verbose=TRUE,
+                           download_files=FALSE,download_path=NULL,overwrite=FALSE,...){
 
   stopifnot("Please specify either catalog_id or url, not both."=is.null(catalog_id) | is.null(url))
   stopifnot(class(catalog_id) == "character" | class(url) == "character")
   stopifnot("Please specify a single Catalog ID or URL."=length(catalog_id) %in% c(0,1) & length(url) %in% c(0,1))
   stopifnot("Please specify a single Catalog ID or URL."=length(c(catalog_id,url)) == 1)
   stopifnot("Date ranges must be class `Date` if specified."=(is.null(date_start) & is.null(date_end)) | (class(date_start)=="Date" & class(date_end)=="Date"))
+  stopifnot("You must specify `download_path` if `download_files=TRUE`"=(download_files==FALSE & is.null(download_path)) | (download_files==TRUE & class(download_path)=="character"))
 
   if(class(catalog_id)=="character"){
     cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))
@@ -52,11 +58,23 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
       if(verbose==TRUE){
         print(paste("Returning dataset with",length(years_cat),"layers be patient..."))
       }
-      raster <- terra::rast(raster_path,...)
+      if(download_files==FALSE){
+        raster <- terra::rast(raster_path,...)
+      }else if(download_files==TRUE){
+        raster_path <- gsub("/vsicurl/","",raster_path)
+        dl_results <- rSDP::download_data(raster_path,
+                                          output_dir=download_path,
+                                          overwrite=overwrite)
+        if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
+          print("Loading raster from local paths.")
+          raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path)),...)
+        }else{
+          stop("Unable to download datasets locally.")
+        }
+      }
       names(raster) <- years_cat
       terra::crs(raster) <- "EPSG:32613"
-      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
-      attr(raster,"DataOffset") <- cat_line$DataOffset
+      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
       return(raster)
 
     }else if(is.null(years) & cat_line$TimeSeriesType=="Yearly"){
@@ -65,11 +83,23 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
       if(verbose==TRUE){
         print(paste("Returning dataset with",length(cat_years),"layers, be patient..."))
       }
-      raster <- terra::rast(raster_path,...)
+      if(download_files==FALSE){
+        raster <- terra::rast(raster_path,...)
+      }else if(download_files==TRUE){
+        raster_path <- gsub("/vsicurl/","",raster_path)
+        dl_results <- rSDP::download_data(raster_path,
+                                          output_dir=download_path,
+                                          overwrite=overwrite)
+        if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
+          print("Loading raster from local paths.")
+          raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path)),...)
+        }else{
+          stop("Unable to download datasets locally.")
+        }
+      }
       names(raster) <- cat_years
       terra::crs(raster) <- "EPSG:32613"
-      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
-      attr(raster,"DataOffset") <- cat_line$DataOffset
+      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
       return(raster)
     }else if(!is.null(date_start) & !is.null(date_end) & cat_line$TimeSeriesType=="Daily"){
       cat_days <- seq(as.Date(cat_line$MinDate,format="%m/%d/%y"),as.Date(cat_line$MaxDate,format="%m/%d/%y"),by="day")
@@ -92,14 +122,27 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
       if(verbose==TRUE){
         print(paste("Returning dataset with",length(days_overlap),"layers, be patient..."))
       }
-      raster <- terra::rast(raster_path_day,...)
+      if(download_files==FALSE){
+        raster <- terra::rast(raster_path_day,...)
+      }else if(download_files==TRUE){
+        raster_path_day <- gsub("/vsicurl/","",raster_path_day)
+        dl_results <- rSDP::download_data(raster_path_day,
+                                          output_dir=download_path,
+                                          overwrite=overwrite)
+        if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
+          print("Loading raster from local paths.")
+          raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path_day)),...)
+        }else{
+          stop("Unable to download datasets locally.")
+        }
+      }
       names(raster) <- as.character(days_overlap)
       terra::crs(raster) <- "EPSG:32613"
-      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
-      attr(raster,"DataOffset") <- cat_line$DataOffset
+      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
       return(raster)
     }else if(is.null(date_start) & is.null(date_end) & cat_line$TimeSeriesType=="Daily"){
-      cat_days <- seq(as.Date(cat_line$MinDate,format="%m/%d/%y"),as.Date(cat_line$MaxDate,format="%m/%d/%y"),by="day")[1:30]
+      cat_days <- seq(as.Date(cat_line$MinDate,format="%m/%d/%y"),
+                      as.Date(cat_line$MaxDate,format="%m/%d/%y"),by="day")[1:30]
       years_overlap <- format(cat_days,format="%Y")
       doys_overlap <- format(cat_days,format="%j")
       days_df <- data.frame(raster_path,years_overlap,doys_overlap)
@@ -110,27 +153,65 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
       }
       raster_path_day <- apply(days_df,MARGIN=1,FUN=repl_fun)
       if(verbose==TRUE){
-        print(paste("No time bounds set for daily data, returning the first 30 layers. Specify StartDate or EndDate to retrieve larger time-series..."))
+        print(paste("No time bounds set for daily data, returning the first 30 layers. Specify StartDate or EndDate to retrieve larger daily time-series..."))
       }
-      raster <- terra::rast(raster_path_day,...)
+      if(download_files==FALSE){
+        raster <- terra::rast(raster_path_day,...)
+      }else if(download_files==TRUE){
+        raster_path_day <- gsub("/vsicurl/","",raster_path_day)
+        dl_results <- rSDP::download_data(raster_path_day,
+                                          output_dir=download_path,
+                                          overwrite=overwrite)
+        if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
+          print("Loading raster from local paths.")
+          raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path_day)),...)
+        }else{
+          stop("Unable to download datasets locally.")
+        }
+      }
       names(raster) <- as.character(cat_days)
       terra::crs(raster) <- "EPSG:32613"
-      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
-      attr(raster,"DataOffset") <- cat_line$DataOffset
+      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
       return(raster)
     }else if(cat_line$TimeSeriesType=="Single"){
-      raster <- terra::rast(raster_path,...)
+      if(download_files==FALSE){
+        raster <- terra::rast(raster_path,...)
+      }else if(download_files==TRUE){
+        raster_path <- gsub("/vsicurl/","",raster_path)
+        dl_results <- rSDP::download_data(raster_path,
+                                          output_dir=download_path,
+                                          overwrite=overwrite)
+        if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
+          print("Loading raster from local paths.")
+          raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path)),...)
+        }else{
+          stop("Unable to download datasets locally.")
+        }
+      }
       terra::crs(raster) <- "EPSG:32613"
-      attr(raster,"DataScaleFactor") <- cat_line$DataScaleFactor
-      attr(raster,"DataOffset") <- cat_line$DataOffset
+      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
       return(raster)
     }
   }else if(class(url)=="character"){
     url_start <- substr(url,1,8)
     if(url_start=="https://"){
       raster_path <- paste0("/vsicurl/",url)
-      raster <- terra::rast(raster_path,...)
+      if(download_files==FALSE){
+        raster <- terra::rast(raster_path,...)
+      }else if(download_files==TRUE){
+        raster_path <- gsub("/vsicurl/","",raster_path)
+        dl_results <- rSDP::download_data(raster_path,
+                                          output_dir=download_path,
+                                          overwrite=overwrite)
+        if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
+          print("Loading raster from local paths.")
+          raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path)),...)
+        }else{
+          stop("Unable to download datasets locally.")
+        }
+      }
       terra::crs(raster) <- "EPSG:32613"
+      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
       return(raster)
     }else{
       errorCondition("A valid URL must start with 'https://'")
@@ -148,7 +229,6 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
 #' @param date_start class `Date`. If the raster dataset is a daily or monthly time-series, the minimum date of extracted data.
 #' @param date_end class `Date`. If the raster dataset is a daily or monthly time-series, the maximum date of extracted data.
 #' @param years numeric. If the raster dataset is an annual time-series, the years of data requested.
-#' @param unscale logical. Should the returned dataset be returned to it's original scale? Some data are rescaled for storage and access efficiency.
 #' @param catalog_id character. Alternative method of specifying which dataset to sample. NOT IMPLEMENTED YET.
 #' @param url_template character. Alternative method of specifying whic dataset to sample. NOT IMPLEMENTED YET.
 #' @param bind logical. Should the extracted data be bound to the inputs? If not, a data frame is returned with the ID field in common with input data.
@@ -181,16 +261,12 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
 #' sdp_extr_df <- sdp_extract_data(sdp_rast,location_sv,return_spatvector=TRUE)
 #' sdp_extr_df
 sdp_extract_data <- function(raster,locations, date_start=NULL,
-                             date_end=NULL,years=NULL,unscale=TRUE,
+                             date_end=NULL,years=NULL,
                              catalog_id=NULL,url_template=NULL,
                              bind=TRUE, return_spatvector=TRUE,
                              method="bilinear", sum_fun="mean",
                              verbose=TRUE,...){
 
-   stopifnot("Raster must have `DataOffset`, and \
-              `DataScaleFactor` attributes if `unscale==TRUE`."=(unscale==FALSE |
-             (unscale==TRUE & all(c("DataOffset","DataScaleFactor") %in%
-                                    names(attributes(raster))))))
    stopifnot("Raster must be a daily time-series with layer names representing \
              dates if `date_start` or `date_end` are specified"=
              (is.null(date_start) & is.null(date_end)) | all(!is.na(as.Date(names(raster),format="%Y-%m-%d"))))
@@ -238,16 +314,6 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
                   terra::nlyr(raster), "raster layers."))
     }
     extracted <- terra::extract(x=raster, y=locations, bind=FALSE, method=method, fun=sum_fun, ...)
-    if(unscale==TRUE){
-      offset <- attr(raster,"DataOffset")
-      scale <- attr(raster,"DataScaleFactor")
-      if(scale==0){
-        warning("Scale factor cannot be zero, ignoring scale...")
-        extracted[,2:ncol(extracted)] <- (extracted[,2:ncol(extracted)] + offset)
-      }else{
-        extracted[,2:ncol(extracted)] <- (extracted[,2:ncol(extracted)] + offset) / scale
-      }
-    }
     if(bind==TRUE & is.null(sum_fun) & terra::geomtype(locations) != "points"){
       warning("Cannot bind outputs to input features when returning all raster values (`sum_fun=NULL`).\n
               Please specify a summary function such as `sum_fun='mean'` to bind inputs to outputs.")
