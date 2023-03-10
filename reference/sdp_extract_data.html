@@ -21,6 +21,12 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item">
   <a class="nav-link" href="../reference/index.html">Reference</a>
 </li>
+<li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/sdp-cloud-data.html">Accessing Cloud-based Datasets</a>
+  </div>
+</li>
       </ul><form class="form-inline my-2 my-lg-0" role="search">
         <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off"></form>
 
@@ -54,7 +60,6 @@
 <span>  date_start <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  date_end <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  years <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  unscale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  catalog_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  url_template <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  bind <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -86,10 +91,6 @@
 
 <dt>years</dt>
 <dd><p>numeric. If the raster dataset is an annual time-series, the years of data requested.</p></dd>
-
-
-<dt>unscale</dt>
-<dd><p>logical. Should the returned dataset be returned to it's original scale? Some data are rescaled for storage and access efficiency.</p></dd>
 
 
 <dt>catalog_id</dt>
