@@ -1,0 +1,23 @@
+---
+title: "Wrangling Raster Data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Wrangling Raster Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+#### Resampling to a different grid.
+
+#### 
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(rSDP)
+```

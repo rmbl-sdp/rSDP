@@ -14,6 +14,177 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
-library(rSDP)
+The `rSDP` package provides functions for finding, accessing, querying, wrangling, and sub-setting a set of curated raster data products. This vignette provides some examples of how to perform the first two steps (finding and accessing), along with some example workflows for exploring and visualizing the data.
+
+To reproduce the examples in this article, you will need to install the latest versions of the `rSDP`,`terra` and `leaflet` packages. For the web maps, you will need to install the development version of the leaflet package from GitHub.
+
+```{r setup, eval = FALSE}
+remotes::install_github("rmbl-sdp/rSDP")
+remotes::install_github("rstudio/leaflet")
+install.packages(c("terra","tidyterra","sf"))
 ```
+
+Loading the libraries makes the functions available.
+
+```{r libraries, warning=FALSE, message=FALSE}
+library(rSDP)
+library(terra)
+library(sf)
+library(leaflet)
+library(tidyterra)
+```
+
+## Finding datasets
+
+The RMBL Spatial Data Platform provides more than 100 spatial data products, so the first challenge is finding data that is relevant to your work. There are currently two ways to find data:
+
+-   Searching and browsing the web-based [Data Catalog](https://www.rmbl.org/scientists/resources/data-catalog/?tag-id=84) on RMBL's website.
+-   Searching and filtering datasets using the built-in catalog in the `rSDP` package.
+
+#### Searching the SDP Catalog from R
+
+You can get a data frame with the catalog information for all datasets with
+
+```{r catalog}
+cat <- sdp_get_catalog()
+head(cat[,1:4])
+```
+
+If you are working in Rstudio, the best way to explore the catalog is by opening it up in the Viewer pane.
+
+```{r viewer, eval=FALSE}
+View(cat)
+```
+
+This allows you to use the built-in filtering and searching facilities of the RStudio Viewer.
+
+If you want to filter the catalog programmatically, you can specify arguments to `sdp_get_catalog()` that return matching rows. For example, if you wan to return only the products that have to do with vegetation, you can specify:
+
+```{r viewer 2}
+veg_cat <- sdp_get_catalog(types="Vegetation")
+head(veg_cat[,1:4])
+```
+
+For more advanced filtering, you can use [regular expressions](https://bookdown.org/rdpeng/rprogdatascience/regular-expressions.html) to match particular products.
+
+```{r regex}
+snow_cat <- cat[grepl("Snow Persist",cat$Product),]
+head(snow_cat[,1:4])
+```
+
+The "CatalogID" field provides a concise, unique identifier for each data product, and is the preferred way to specify an individual product. Here, the CatalogID "R4D001" represents the data product representing annual time-series of snow persistence across the Upper Gunnison domain.
+
+#### Getting detailed metadata
+
+To get detailed metadata for each item (beyond the basic information that is provided in the Catalog), we can use the `sdp_get_metadata()` function.
+
+```{r metadata}
+snow_meta <- sdp_get_metadata("R4D001")
+print(snow_meta$qgis$extent$spatial)
+```
+
+#### Visualizing the SDP domains
+
+We currently provide SDP data products in three different spatial domains. To visualize the boundaries of these domains, we can construct a web map that shows them. First we need to connect to these datasets stored in the cloud.
+
+```{r connect domains, message=FALSE}
+GT_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/GT_region_vect_1m.geojson")
+UER_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UER_region_vect_1m.geojson")
+UG_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UG_region_vect_1m.geojson")
+domain_bounds <- rbind(UG_bound,UER_bound,GT_bound)
+domain_bounds$Domain <- c("Upper Gunnison (UG)","Upper East River (UER)","Gothic Townsite (GT)")
+```
+
+Once we've got them in, we can use the `terra::plet()` function to plot the domains on a web map.
+
+```{r plot domains,out.width="100%"}
+domain_sv <- vect(domain_bounds)
+plet(domain_sv,"Domain",tiles="Esri.NatGeoWorldMap",alpha=0.6,
+     main="SDP Spatial Domains",
+     col=c("#6c42f5","#c95773","#59c957"))
+```
+
+## Connecting to data in the cloud
+
+All SDP data products are raster datasets available on the cloud storage service [Amazon S3](https://aws.amazon.com/s3/). In many cases the simplest way to interact with a dataset is by connecting to it using the web-based file system embedded in the `terra` package.
+
+To make this as straightforward as possible, we provide the function `sdp_get_raster()` to connect to these data. By default, this function creates an R object representing the dataset without downloading the whole thing locally.
+
+#### Single datasets
+
+To connect to a dataset that only contains a single layer, or a few related layers stored in a single file, you only need to provide `sdp_get_raster` with the CatalogID number for the data. Here we load an elevation map for the Upper Gunnison (UG) domain.
+
+```{r elevation}
+UG_elev <- sdp_get_raster("R3D009")
+UG_elev
+```
+
+We can now see more details about the structure of the dataset, including its size (2401 x 27668 pixels), resolution (3m), and coordinate reference system.
+
+Importantly we can do many common data visualizations and manipulations on the dataset without having to download the entire thing. For example, if we want to crop the data to an area of interest (say the Gothic Townsite polygon we loaded earlier), we can accomplish this while only downloading the portion of the large raster that covers the polygon of interest.
+
+```{r crop}
+GT_elev <- crop(UG_elev,domain_sv[3,])
+GT_elev
+```
+
+You will notice that the `source(s)` field now says "memory". This means that the new dataset we created no longer lives on the cloud, but is now stored in memory on our computer. If the cropped subset is too large to fit in memory, it is written to a temporary file.
+
+We can now plot the cropped raster dataset.
+
+```{r crop map, out.width="100%"}
+plet(GT_elev,tiles="Esri.WorldImagery")
+```
+
+#### Time-series datasets
+
+Single-layer datasets are relatively simple in structure, but many of the SDP data products are provided as time-series. These are maps provided at daily, monthly, or annual intervals.
+
+For these data products, you will need to add additional arguments to `sdp_get_raster()` to specify which temporal subsets to return. For example specifying the `years` argument to annual data will return only data layers representing the desired years. This code returns a raster dataset representing snowpack persistence for the years 2018 through 2020:
+
+```{r snow years}
+	
+cat[cat$CatalogID=="R4D001",1:4]
+snow_years <- sdp_get_raster("R4D001",years=2018:2020,verbose=FALSE)
+snow_years
+```
+
+To find out which time intervals are included for each dataset, you can examine the catalog fields `MinYear` , `MaxYear`, `MinDate` and `MaxDate.`
+
+```{r cat year, out.width="100%"}
+cat[cat$TimeSeriesType %in% c("Yearly","Monthly","Daily"),c(1,4,8:11)]
+```
+
+#### When should you download data locally?
+
+Although you can perform many operations on cloud-based datasets without downloading them locally, some operations may be prohibitively slow. For example, sampling 100 random points from the snow raster we connected to above took approximately 25 seconds to complete over my home internet connection when the data was stored in the cloud:
+
+```{r cloud snow time}
+start_time <- Sys.time()
+snow_samp_cloud <- spatSample(snow_years,size=100)
+Sys.time() - start_time
+```
+
+This is *much* slower than the same operation on locally stored data. To deal with situations like this, we have included data download capabilities in the `sdp_get_raster()` function. Specifying `download_files=TRUE` along with a local `download_path` creates a local copy of the data on your computer:
+
+```{r snow download}
+snow_years_local <- sdp_get_raster("R4D001",years=2018:2020,verbose=FALSE,
+                                   download_files=TRUE,
+                                   download_path="~/Downloads")
+```
+
+```{r local snow time}
+start_time <- Sys.time()
+snow_samp_local <- spatSample(snow_years_local,size=100)
+Sys.time() - start_time
+```
+
+So it's almost 20 times faster to sample from the local dataset! In this example, the time saved doesn't quite make up for the extra time to download the data, but it often will for larger operations.
+
+Here are some types of operations that might benefit from downloading data locally:
+
+-   Operations that use many or all of the pixels of the target datasets (e.g. resampling, reprojecting).
+
+-   Operations that span a large proportion of the extent of the raster (e.g. sampling values at random points).
+
+-   If you are performing multiple operations on a single source dataset (e.g. doing multiple raster algebra calculations on a single raster source).
