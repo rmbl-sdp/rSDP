@@ -21,7 +21,7 @@ To reproduce the examples in this article, you will need to install the latest v
 ```{r setup, eval = FALSE}
 remotes::install_github("rmbl-sdp/rSDP")
 remotes::install_github("rstudio/leaflet")
-install.packages(c("terra","tidyterra","sf"))
+install.packages(c("terra","tidyterra","sf"),type="binary") ## `binary` install prevents dependency issues on Mac and Windows
 ```
 
 Loading the libraries makes the functions available.
