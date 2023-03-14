@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   sdp-cloud-data: sdp-cloud-data.html
   wrangle-raster-data: wrangle-raster-data.html
-last_built: 2023-03-11T00:35Z
+last_built: 2023-03-14T22:36Z
 urls:
   reference: https://rmbl-sdp.github.io/rSDP/reference
   article: https://rmbl-sdp.github.io/rSDP/articles
