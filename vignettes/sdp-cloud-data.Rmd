@@ -87,7 +87,7 @@ print(snow_meta$qgis$extent$spatial)
 
 We currently provide SDP data products in three different spatial domains. To visualize the boundaries of these domains, we can construct a web map that shows them. First we need to connect to these datasets stored in the cloud.
 
-```{r connect domains, message=FALSE}
+```{r connect domains, message=FALSE, warning=FALSE}
 GT_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/GT_region_vect_1m.geojson")
 UER_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UER_region_vect_1m.geojson")
 UG_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UG_region_vect_1m.geojson")
