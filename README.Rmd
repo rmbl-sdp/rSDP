@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# rSDP
+# rSDP <img src="man/figures/logo.png" align="right" />
 
 <!-- badges: start -->
 `r lifecycle::badge('experimental')`

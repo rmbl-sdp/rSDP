@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# rSDP
+# rSDP <img src="man/figures/logo.png" align="right" />
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -263,7 +263,7 @@ extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("terra","devtools"))
   (extr_dat)
 }
 #> Warning: package 'terra' was built under R version 4.1.2
-#> terra 1.6.53
+#> terra 1.7.18
 #> Loading required package: usethis
 #> ℹ Loading rSDP
 #> ℹ Loading rSDP
@@ -305,8 +305,8 @@ timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Loo
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
 #>                        approach        timing
-#> 1                   Single Call 17.31711 secs
-#> 2    Looping sdp_extract_data() 27.24529 secs
-#> 3 Looping over sdp_get_raster() 40.62688 secs
-#> 4                       Foreach 46.89118 secs
+#> 1                   Single Call 20.00869 secs
+#> 2    Looping sdp_extract_data() 29.24743 secs
+#> 3 Looping over sdp_get_raster() 29.55975 secs
+#> 4                       Foreach 38.49043 secs
 ```
