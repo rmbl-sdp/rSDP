@@ -14,6 +14,51 @@ knitr::opts_chunk$set(
 )
 ```
 
+*by [Ian Breckheimer](ikb@rmbl.org), updated 15 March 2023.*
+
+Data products generated as part of the RMBL Spatial Data Platform are meant to provide important environmental context for measurements collected in the field. Taking advantage of this requires us to extract the values of data products at the locations of field sites and generate appropriate summaries.
+
+For example, if we want to understand
+
+## Reading in spatial data on field sites.
+
+#### Tabular data with coordinates
+
+#### GeoJSON and GeoPackage files
+
+#### Shapefiles
+
+#### Web services
+
+
+## Finding and loading SDP data products
+
+#### Single layer data
+
+#### Raster time-series
+
+
+## Extracting data at field sites
+
+#### Re-projecting field site data
+
+#### Simple extraction at points
+
+#### Buffered extraction at points with summaries
+
+#### Extracting using lines and polygons
+
+#### Time-series data
+
+
+## Strategies for boosting performance
+
+#### Downloading data locally
+
+#### Parallel processing
+
+
+
 ```{r setup}
 library(rSDP)
 ```
