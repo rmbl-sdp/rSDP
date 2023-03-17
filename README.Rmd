@@ -25,7 +25,7 @@ SDP data products are provided as geospatial raster datasets in [cloud-optimized
 
 ## Installation
 
-You can install the development version of rSDP from [GitHub](https://github.com/) with:
+You can install the latest version of rSDP from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
@@ -64,6 +64,7 @@ The function `sdp_get_raster()`, creates R representations of cloud-based datase
 dem <- sdp_get_raster(catalog_id="R3D009")
 terra::plot(dem)
 ```
+
 ## Extracting samples of SDP data.
 
 The function `sdp_extract_data()` extracts samples from datasets at locations represented by points, lines, or polygons.
@@ -105,7 +106,7 @@ text(slope_site_sd$Slope_mean,slope_site_sd$Slope_sd,labels=slope_site_sd$SiteNa
 ```
 You can also return all the cell values intersecting each line or polygon by specifying `sum_fun=NULL`. Passing the argument `exact=TRUE` with polygon features returns the proportion of each raster cell included in the polygon (useful for computing area-weighted means.)
 
-```{r example6}
+```{r example6, warning=FALSE}
 slope_allcells <- sdp_extract_data(raster=slope,locations=slope_site_mean,
                                   sum_fun=NULL,exact=TRUE,bind=FALSE)
 head(slope_allcells)

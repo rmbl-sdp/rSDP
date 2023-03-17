@@ -22,7 +22,7 @@ downloading.
 
 ## Installation
 
-You can install the development version of rSDP from
+You can install the latest version of rSDP from
 [GitHub](https://github.com/) with:
 
 ``` r
@@ -81,8 +81,9 @@ dem <- sdp_get_raster(catalog_id="R3D009")
 terra::plot(dem)
 ```
 
-<img src="man/figures/README-example3-1.png" width="100%" /> \##
-Extracting samples of SDP data.
+<img src="man/figures/README-example3-1.png" width="100%" />
+
+## Extracting samples of SDP data.
 
 The function `sdp_extract_data()` extracts samples from datasets at
 locations represented by points, lines, or polygons.
@@ -148,8 +149,6 @@ the polygon (useful for computing area-weighted means.)
 slope_allcells <- sdp_extract_data(raster=slope,locations=slope_site_mean,
                                   sum_fun=NULL,exact=TRUE,bind=FALSE)
 #> [1] "Extracting data at 3 locations for 1 raster layers."
-#> Warning in sdp_extract_data(raster = slope, locations = slope_site_mean, :
-#> Function will always return a data frame if `bind=FALSE`.
 #> [1] "Extraction complete."
 head(slope_allcells)
 #>   ID UG_dem_slope_1m_v1   fraction
@@ -305,8 +304,8 @@ timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Loo
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
 #>                        approach        timing
-#> 1                   Single Call 20.00869 secs
-#> 2    Looping sdp_extract_data() 29.24743 secs
-#> 3 Looping over sdp_get_raster() 29.55975 secs
-#> 4                       Foreach 38.49043 secs
+#> 1                   Single Call 19.42925 secs
+#> 2    Looping sdp_extract_data() 28.26090 secs
+#> 3 Looping over sdp_get_raster() 32.65280 secs
+#> 4                       Foreach 42.43251 secs
 ```
