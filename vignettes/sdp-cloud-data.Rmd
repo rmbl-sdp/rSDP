@@ -68,7 +68,7 @@ head(veg_cat[,1:4])
 For more advanced filtering, you can use [regular expressions](https://bookdown.org/rdpeng/rprogdatascience/regular-expressions.html) to match particular products.
 
 ```{r regex}
-snow_cat <- cat[grepl("Snow Persist",cat$Product),]
+snow_cat <- cat[grepl("Snowpack Persist",cat$Product),]
 head(snow_cat[,1:4])
 ```
 
