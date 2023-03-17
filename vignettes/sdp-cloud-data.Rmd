@@ -133,7 +133,7 @@ You will notice that the `source(s)` field now says "memory". This means that th
 We can now plot the cropped raster dataset.
 
 ```{r crop map, out.width="100%"}
-plet(GT_elev,tiles="Esri.WorldImagery")
+plot(GT_elev)
 ```
 
 #### Time-series datasets
@@ -179,7 +179,7 @@ snow_samp_local <- spatSample(snow_years_local,size=100)
 Sys.time() - start_time
 ```
 
-So it's almost 20 times faster to sample from the local dataset! In this example, the time saved doesn't quite make up for the extra time to download the data, but it often will for larger operations.
+So it's almost 40 times faster to sample from the local dataset! In this example, the time saved doesn't quite make up for the extra time to download the data, but it often will for larger operations.
 
 Here are some types of operations that might benefit from downloading data locally:
 

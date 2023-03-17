@@ -6,6 +6,8 @@
 \alias{rSDP-package}
 \title{rSDP: Discover, Query, and Subset Data from the RMBL Spatial Data Platform}
 \description{
+\if{html}{\figure{logo.png}{options: align='right' alt='logo' width='120'}}
+
 The rSDP package provides a simplified interface for discovering, querying, and subsetting data products that are incorporated into the RMBL Spatial Data Platform. The RMBL SDP provides a set of curated, high-resolution, and high-fidelity geospatial datasets for a set of domains in Western Colorado (USA) in the vicinity of [Rocky Mountain Biological Laboratory](https://rmbl.org). For more information about the RMBL SDP [see here](https://www.rmbl.org/scientists/resources/spatial-data-platform/). SDP data products are provided as geospatial raster datasets in [cloud-optimized Geotiff]() (COG) format. The rSDP package provides functions to access these datasets in cloud storage (Amazon S3) without downloading.
 }
 \seealso{
