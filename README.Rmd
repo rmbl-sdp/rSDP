@@ -64,6 +64,12 @@ The function `sdp_get_raster()`, creates R representations of cloud-based datase
 dem <- sdp_get_raster(catalog_id="R3D009")
 terra::plot(dem)
 ```
+Alternatively, you can plot these data on a web map:
+
+```{r example plet, eval=FALSE}
+terra::plet(dem,tiles="Esri.WorldImagery")
+```
+
 
 ## Extracting samples of SDP data.
 
@@ -179,19 +185,24 @@ elapsed3 <- Sys.time() - start3
 ## Parallel extraction via foreach.
 library(foreach)
 library(doParallel)
+library(sf)
+
+## Can't pass SpatVector or SpatRaster objects via Foreach, so convert to sf.
+locations_sf <- st_as_sf(location_sv)
 
 start4 <- Sys.time()
-##cl <- parallel::makeCluster(4)
-##doParallel::registerDoParallel(cl)
+cl <- parallel::makeCluster(4)
+doParallel::registerDoParallel(cl)
 days <- seq(as.Date("2007-10-01"),as.Date("2007-10-31"),by="day")
 
-extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("terra","devtools")) %do% {
-  devtools::load_all() ## During package development.
+extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("sf","terra","rSDP")) %dopar% {
+  #devtools::load_all() ## During package development.
   tmax4 <- rSDP::sdp_get_raster("R4D004",date_start=days[i],date_end=days[i],verbose=FALSE)
-  extr_dat <- rSDP::sdp_extract_data(tmax4,locations_proj,verbose=FALSE)[,3]
-  (extr_dat)
+   extr_dat <- rSDP::sdp_extract_data(tmax4,vect(locations_sf),verbose=FALSE,
+                                      return_spatvector=FALSE)[,3]
+   (extr_dat)
 }
-##parallel::stopCluster(cl)
+parallel::stopCluster(cl)
 tmax_extr4 <- do.call(cbind,extr_list4)
 elapsed4 <- Sys.time() - start4
 

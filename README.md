@@ -82,6 +82,11 @@ terra::plot(dem)
 ```
 
 <img src="man/figures/README-example3-1.png" width="100%" />
+Alternatively, you can plot these data on a web map:
+
+``` r
+terra::plet(dem,tiles="Esri.WorldImagery")
+```
 
 ## Extracting samples of SDP data.
 
@@ -249,53 +254,26 @@ library(doParallel)
 #> Loading required package: iterators
 #> Warning: package 'iterators' was built under R version 4.1.2
 #> Loading required package: parallel
+library(sf)
+#> Warning: package 'sf' was built under R version 4.1.2
+#> Linking to GEOS 3.10.2, GDAL 3.4.2, PROJ 8.2.1; sf_use_s2() is TRUE
+
+## Can't pass SpatVector or SpatRaster objects via Foreach, so convert to sf.
+locations_sf <- st_as_sf(location_sv)
 
 start4 <- Sys.time()
-##cl <- parallel::makeCluster(4)
-##doParallel::registerDoParallel(cl)
+cl <- parallel::makeCluster(4)
+doParallel::registerDoParallel(cl)
 days <- seq(as.Date("2007-10-01"),as.Date("2007-10-31"),by="day")
 
-extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("terra","devtools")) %do% {
-  devtools::load_all() ## During package development.
+extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("sf","terra","rSDP")) %dopar% {
+  #devtools::load_all() ## During package development.
   tmax4 <- rSDP::sdp_get_raster("R4D004",date_start=days[i],date_end=days[i],verbose=FALSE)
-  extr_dat <- rSDP::sdp_extract_data(tmax4,locations_proj,verbose=FALSE)[,3]
-  (extr_dat)
+   extr_dat <- rSDP::sdp_extract_data(tmax4,vect(locations_sf),verbose=FALSE,
+                                      return_spatvector=FALSE)[,3]
+   (extr_dat)
 }
-#> Warning: package 'terra' was built under R version 4.1.2
-#> terra 1.7.18
-#> Loading required package: usethis
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-#> ℹ Loading rSDP
-##parallel::stopCluster(cl)
+parallel::stopCluster(cl)
 tmax_extr4 <- do.call(cbind,extr_list4)
 elapsed4 <- Sys.time() - start4
 
@@ -304,8 +282,8 @@ timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Loo
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
 #>                        approach        timing
-#> 1                   Single Call 19.42925 secs
-#> 2    Looping sdp_extract_data() 28.26090 secs
-#> 3 Looping over sdp_get_raster() 32.65280 secs
-#> 4                       Foreach 42.43251 secs
+#> 1                   Single Call 19.70793 secs
+#> 2    Looping sdp_extract_data() 29.18842 secs
+#> 3 Looping over sdp_get_raster() 28.99906 secs
+#> 4                       Foreach 32.57772 secs
 ```

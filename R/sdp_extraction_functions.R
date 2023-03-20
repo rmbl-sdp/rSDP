@@ -26,7 +26,7 @@
 #' landcover <- sdp_get_raster(lc_id)
 #' landcover
 #'
-sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
+sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
                            date_start=NULL,date_end=NULL, verbose=TRUE,
                            download_files=FALSE,download_path=NULL,overwrite=FALSE,...){
 
@@ -36,6 +36,9 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
   stopifnot("Please specify a single Catalog ID or URL."=length(c(catalog_id,url)) == 1)
   stopifnot("Date ranges must be class `Date` if specified."=(is.null(date_start) & is.null(date_end)) | (class(date_start)=="Date" & class(date_end)=="Date"))
   stopifnot("You must specify `download_path` if `download_files=TRUE`"=(download_files==FALSE & is.null(download_path)) | (download_files==TRUE & class(download_path)=="character"))
+
+  months_pad <- formatC(as.numeric(months), width = 2, format = "d", flag = "0")
+  stopifnot("Invalid months specified."=(all(months_pad %in% c(formatC(1:12, width = 2, format = "d", flag = "0")))) | is.null(months))
 
   if(class(catalog_id)=="character"){
     cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))
@@ -98,6 +101,67 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,
         }
       }
       names(raster) <- cat_years
+      terra::crs(raster) <- "EPSG:32613"
+      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
+      return(raster)
+    }else if(is.null(years) & !is.null(months) & cat_line$TimeSeriesType=="Monthly"){
+      cat_months <- seq(cat_line$MinDate, cat_line$MaxDate,by="month")
+      cat_months_char <- format(cat_months,format="%m")
+      cat_months_pad <- formatC(as.numeric(cat_months_char), width = 2, format = "d", flag = "0")
+      dates_overlap <- cat_months[cat_months_char %in% months_pad]
+      months_overlap <- format(dates_overlap, "%m")
+      years_overlap <- format(dates_overlap, "%Y")
+      raster_sub <- gsub("{month}","%s",raster_path,fixed=TRUE)
+      raster_sub <- gsub("{year}","%s",raster_sub,fixed=TRUE)
+      raster_path <- sprintf(raster_sub,years_overlap,months_overlap)
+      if(verbose==TRUE){
+        print(paste("Returning dataset with",length(raster_path),"layers, be patient..."))
+      }
+      if(download_files==FALSE){
+        raster <- terra::rast(raster_path,...)
+      }else if(download_files==TRUE){
+        raster_path <- gsub("/vsicurl/","",raster_path)
+        dl_results <- rSDP::download_data(raster_path,
+                                          output_dir=download_path,
+                                          overwrite=overwrite)
+        if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
+          print("Loading raster from local paths.")
+          raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path)),...)
+        }else{
+          stop("Unable to download datasets locally.")
+        }
+      }
+      names(raster) <- format(dates_overlap,format="%Y-%m")
+      terra::crs(raster) <- "EPSG:32613"
+      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
+      return(raster)
+
+    }else if(is.null(years) & is.null(months) & cat_line$TimeSeriesType=="Monthly"){
+      cat_months <- seq(cat_line$MinDate, cat_line$MaxDate,by="month")
+      cat_months_char <- format(cat_months,format="%m")
+      cat_months_pad <- formatC(as.numeric(cat_months_char), width = 2, format = "d", flag = "0")
+      cat_years <- format(cat_months, "%Y")
+      raster_sub <- gsub("{month}","%s",raster_path,fixed=TRUE)
+      raster_sub <- gsub("{year}","%s",raster_sub,fixed=TRUE)
+      raster_path <- sprintf(raster_sub,cat_years,cat_months_pad)
+      if(verbose==TRUE){
+        print(paste("Returning dataset with",length(raster_path),"layers, be patient..."))
+      }
+      if(download_files==FALSE){
+        raster <- terra::rast(raster_path,...)
+      }else if(download_files==TRUE){
+        raster_path <- gsub("/vsicurl/","",raster_path)
+        dl_results <- rSDP::download_data(raster_path,
+                                          output_dir=download_path,
+                                          overwrite=overwrite)
+        if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
+          print("Loading raster from local paths.")
+          raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path)),...)
+        }else{
+          stop("Unable to download datasets locally.")
+        }
+      }
+      names(raster) <- format(cat_months,format="%Y-%m")
       terra::crs(raster) <- "EPSG:32613"
       terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
       return(raster)
