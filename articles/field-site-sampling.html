@@ -87,9 +87,86 @@
 
     
     
+<p><em>by <a href="ikb@rmbl.org">Ian Breckheimer</a>, updated 15 March
+2023.</em></p>
+<p>Data products generated as part of the RMBL Spatial Data Platform are
+meant to provide important environmental context for measurements
+collected in the field. Taking advantage of this requires us to extract
+the values of data products at the locations of field sites and generate
+appropriate summaries.</p>
+<p>For example, if we want to understand</p>
+<div class="section level2">
+<h2 id="reading-in-spatial-data-on-field-sites-">Reading in spatial data on field sites.<a class="anchor" aria-label="anchor" href="#reading-in-spatial-data-on-field-sites-"></a>
+</h2>
+<div class="section level4">
+<h4 id="tabular-data-with-coordinates">Tabular data with coordinates<a class="anchor" aria-label="anchor" href="#tabular-data-with-coordinates"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="geojson-and-geopackage-files">GeoJSON and GeoPackage files<a class="anchor" aria-label="anchor" href="#geojson-and-geopackage-files"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="shapefiles">Shapefiles<a class="anchor" aria-label="anchor" href="#shapefiles"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="web-services">Web services<a class="anchor" aria-label="anchor" href="#web-services"></a>
+</h4>
+</div>
+</div>
+<div class="section level2">
+<h2 id="finding-and-loading-sdp-data-products">Finding and loading SDP data products<a class="anchor" aria-label="anchor" href="#finding-and-loading-sdp-data-products"></a>
+</h2>
+<div class="section level4">
+<h4 id="single-layer-data">Single layer data<a class="anchor" aria-label="anchor" href="#single-layer-data"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="raster-time-series">Raster time-series<a class="anchor" aria-label="anchor" href="#raster-time-series"></a>
+</h4>
+</div>
+</div>
+<div class="section level2">
+<h2 id="extracting-data-at-field-sites">Extracting data at field sites<a class="anchor" aria-label="anchor" href="#extracting-data-at-field-sites"></a>
+</h2>
+<div class="section level4">
+<h4 id="re-projecting-field-site-data">Re-projecting field site data<a class="anchor" aria-label="anchor" href="#re-projecting-field-site-data"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="simple-extraction-at-points">Simple extraction at points<a class="anchor" aria-label="anchor" href="#simple-extraction-at-points"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="buffered-extraction-at-points-with-summaries">Buffered extraction at points with summaries<a class="anchor" aria-label="anchor" href="#buffered-extraction-at-points-with-summaries"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="extracting-using-lines-and-polygons">Extracting using lines and polygons<a class="anchor" aria-label="anchor" href="#extracting-using-lines-and-polygons"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="time-series-data">Time-series data<a class="anchor" aria-label="anchor" href="#time-series-data"></a>
+</h4>
+</div>
+</div>
+<div class="section level2">
+<h2 id="strategies-for-boosting-performance">Strategies for boosting performance<a class="anchor" aria-label="anchor" href="#strategies-for-boosting-performance"></a>
+</h2>
+<div class="section level4">
+<h4 id="downloading-data-locally">Downloading data locally<a class="anchor" aria-label="anchor" href="#downloading-data-locally"></a>
+</h4>
+</div>
+<div class="section level4">
+<h4 id="parallel-processing">Parallel processing<a class="anchor" aria-label="anchor" href="#parallel-processing"></a>
+</h4>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rmbl-sdp/rSDP" class="external-link">rSDP</a></span><span class="op">)</span></span></code></pre></div>
-  </main>
+</div>
+</div>
+  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 

@@ -85,7 +85,7 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of rSDP from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
+<p>You can install the latest version of rSDP from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"rmbl-sdp/rSDP"</span><span class="op">)</span></span></code></pre></div>
@@ -131,9 +131,15 @@
 <code class="sourceCode R"><span><span class="co">## Creates a `SpatRaster` object for a dataset.</span></span>
 <span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span>catalog_id<span class="op">=</span><span class="st">"R3D009"</span><span class="op">)</span></span>
 <span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-example3-1.png" width="100%"> ## Extracting samples of SDP data.</p>
-<p>The function <code><a href="reference/sdp_extract_data.html">sdp_extract_data()</a></code> extracts samples from datasets at locations represented by points, lines, or polygons.</p>
+<p><img src="reference/figures/README-example3-1.png" width="100%"> Alternatively, you can plot these data on a web map:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plet.html" class="external-link">plet</a></span><span class="op">(</span><span class="va">dem</span>,tiles<span class="op">=</span><span class="st">"Esri.WorldImagery"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="extracting-samples-of-sdp-data">Extracting samples of SDP data.<a class="anchor" aria-label="anchor" href="#extracting-samples-of-sdp-data"></a>
+</h2>
+<p>The function <code><a href="reference/sdp_extract_data.html">sdp_extract_data()</a></code> extracts samples from datasets at locations represented by points, lines, or polygons.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Extracts values of an SDP dataset.</span></span>
 <span><span class="va">elev</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span>catalog_id<span class="op">=</span><span class="st">"R3D009"</span><span class="op">)</span></span>
 <span><span class="va">slope</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span>catalog_id<span class="op">=</span><span class="st">"R3D012"</span><span class="op">)</span></span>
@@ -150,11 +156,11 @@
 <span><span class="va">slope_sample</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_extract_data.html">sdp_extract_data</a></span><span class="op">(</span>raster<span class="op">=</span><span class="va">slope</span>,locations<span class="op">=</span><span class="va">dem_sample</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Extracting data at 3 locations for 1 raster layers."</span></span>
 <span><span class="co">#&gt; [1] "Extraction complete."</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">slope_sample</span><span class="op">$</span><span class="va">UG_dem_3m_v1</span>,<span class="va">slope_sample</span><span class="op">$</span><span class="va">UG_dem_slope_1m_v1</span>,xlab<span class="op">=</span><span class="st">"Elevation (m)."</span>,</span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">slope_sample</span><span class="op">$</span><span class="va">UG_dem_3m_v1</span>,<span class="va">slope_sample</span><span class="op">$</span><span class="va">UG_dem_slope_1m_v1</span>,xlab<span class="op">=</span><span class="st">"Elevation (m)."</span>,</span>
 <span>     ylab<span class="op">=</span><span class="st">"Slope (degrees)"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-example4-1.png" width="100%"></p>
 <p>With line or polygon locations <code><a href="reference/sdp_extract_data.html">sdp_extract_data()</a></code> summarizes raster values by line or polygon. The default method computes the mean value for each polygon, but you can also specify other summary functions using the <code>sum_fun</code> argument.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">slope</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span>catalog_id<span class="op">=</span><span class="st">"R3D012"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">location_poly</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>SiteName<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Wet"</span>,<span class="st">"Conifer"</span>,<span class="st">"Rocky"</span><span class="op">)</span>,</span>
@@ -172,18 +178,16 @@
 <span><span class="co">#&gt; [1] "Extraction complete."</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">slope_site_sd</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SiteName"</span>,<span class="st">"ID"</span>,<span class="st">"Slope_mean"</span>,<span class="st">"ID2"</span>,<span class="st">"Slope_sd"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">slope_site_sd</span><span class="op">$</span><span class="va">Slope_mean</span>,<span class="va">slope_site_sd</span><span class="op">$</span><span class="va">Slope_sd</span>,xlab<span class="op">=</span><span class="st">"Slope Mean (deg.)"</span>,</span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">slope_site_sd</span><span class="op">$</span><span class="va">Slope_mean</span>,<span class="va">slope_site_sd</span><span class="op">$</span><span class="va">Slope_sd</span>,xlab<span class="op">=</span><span class="st">"Slope Mean (deg.)"</span>,</span>
 <span>     ylab<span class="op">=</span><span class="st">"Slope Standard Deviation"</span>,pch<span class="op">=</span><span class="st">""</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/text.html" class="external-link">text</a></span><span class="op">(</span><span class="va">slope_site_sd</span><span class="op">$</span><span class="va">Slope_mean</span>,<span class="va">slope_site_sd</span><span class="op">$</span><span class="va">Slope_sd</span>,labels<span class="op">=</span><span class="va">slope_site_sd</span><span class="op">$</span><span class="va">SiteName</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/text.html" class="external-link">text</a></span><span class="op">(</span><span class="va">slope_site_sd</span><span class="op">$</span><span class="va">Slope_mean</span>,<span class="va">slope_site_sd</span><span class="op">$</span><span class="va">Slope_sd</span>,labels<span class="op">=</span><span class="va">slope_site_sd</span><span class="op">$</span><span class="va">SiteName</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-example5-1.png" width="100%"> You can also return all the cell values intersecting each line or polygon by specifying <code>sum_fun=NULL</code>. Passing the argument <code>exact=TRUE</code> with polygon features returns the proportion of each raster cell included in the polygon (useful for computing area-weighted means.)</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">slope_allcells</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_extract_data.html">sdp_extract_data</a></span><span class="op">(</span>raster<span class="op">=</span><span class="va">slope</span>,locations<span class="op">=</span><span class="va">slope_site_mean</span>,</span>
 <span>                                  sum_fun<span class="op">=</span><span class="cn">NULL</span>,exact<span class="op">=</span><span class="cn">TRUE</span>,bind<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Extracting data at 3 locations for 1 raster layers."</span></span>
-<span><span class="co">#&gt; Warning in sdp_extract_data(raster = slope, locations = slope_site_mean, :</span></span>
-<span><span class="co">#&gt; Function will always return a data frame if `bind=FALSE`.</span></span>
 <span><span class="co">#&gt; [1] "Extraction complete."</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">slope_allcells</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">slope_allcells</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   ID UG_dem_slope_1m_v1   fraction</span></span>
 <span><span class="co">#&gt; 1  1           4.609455 0.01733949</span></span>
 <span><span class="co">#&gt; 2  1           6.018766 0.34246161</span></span>
@@ -196,7 +200,7 @@
 <h2 id="working-with-raster-time-series">Working with raster time-series<a class="anchor" aria-label="anchor" href="#working-with-raster-time-series"></a>
 </h2>
 <p>The <code><a href="reference/sdp_get_raster.html">sdp_get_raster()</a></code> and <code><a href="reference/sdp_extract_data.html">sdp_extract_data()</a></code> functions also provide some convenience features for subsetting time-series datasets by day or year.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Connects to rasters from a temporal subset of daily data.</span></span>
 <span><span class="va">tmax</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span><span class="st">"R4D004"</span>,date_start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2011-12-01"</span><span class="op">)</span>,date_end<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2011-12-30"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Returning dataset with 30 layers, be patient..."</span></span>
@@ -206,17 +210,17 @@
 <span><span class="co">#&gt; [1] "Re-projecting locations to coordinate system of the raster."</span></span>
 <span><span class="co">#&gt; [1] "Extracting data at 3 locations for 20 raster layers."</span></span>
 <span><span class="co">#&gt; [1] "Extraction complete."</span></span>
-<span><span class="va">tmax_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span></span>
-<span><span class="va">dates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">tmax_df</span><span class="op">)</span><span class="op">[</span><span class="fl">3</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">tmax_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span></span>
+<span><span class="va">dates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">tmax_df</span><span class="op">)</span><span class="op">[</span><span class="fl">3</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="va">sites</span> <span class="op">&lt;-</span> <span class="va">tmax_df</span><span class="op">$</span><span class="va">SiteName</span></span>
 <span></span>
 <span><span class="co">##Plots the result</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">dates</span>,<span class="va">tmax_df</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span><span class="op">]</span>,type<span class="op">=</span><span class="st">"l"</span>,ylab<span class="op">=</span><span class="st">"Tmax (C)"</span>,ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">15</span>,<span class="fl">7</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">dates</span>,<span class="va">tmax_df</span><span class="op">[</span><span class="fl">2</span>,<span class="fl">3</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span><span class="op">]</span>,type<span class="op">=</span><span class="st">"l"</span>,col<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/lines.html" class="external-link">points</a></span><span class="op">(</span><span class="va">dates</span>,<span class="va">tmax_df</span><span class="op">[</span><span class="fl">3</span>,<span class="fl">3</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/dimensions.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span><span class="op">]</span>,type<span class="op">=</span><span class="st">"l"</span>,col<span class="op">=</span><span class="fl">4</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">dates</span>,<span class="va">tmax_df</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">3</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span><span class="op">]</span>,type<span class="op">=</span><span class="st">"l"</span>,ylab<span class="op">=</span><span class="st">"Tmax (C)"</span>,ylim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">15</span>,<span class="fl">7</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="va">dates</span>,<span class="va">tmax_df</span><span class="op">[</span><span class="fl">2</span>,<span class="fl">3</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span><span class="op">]</span>,type<span class="op">=</span><span class="st">"l"</span>,col<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="va">dates</span>,<span class="va">tmax_df</span><span class="op">[</span><span class="fl">3</span>,<span class="fl">3</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">tmax_sample</span><span class="op">)</span><span class="op">]</span>,type<span class="op">=</span><span class="st">"l"</span>,col<span class="op">=</span><span class="fl">4</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"bottomright"</span>, legend<span class="op">=</span><span class="va">sites</span>,col<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">3</span>,<span class="fl">4</span><span class="op">)</span>,bty<span class="op">=</span><span class="st">"n"</span>,lty<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-example7-1.png" width="100%"></p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="co">##Retrieving rasters from a subset of years.</span></span>
 <span><span class="va">snow_yearly</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span><span class="st">"R4D001"</span>,years<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2012</span>,<span class="fl">2019</span><span class="op">)</span><span class="op">)</span></span>
@@ -228,7 +232,7 @@
 <h2 id="extracting-data-from-large-time-series-datasets">Extracting data from large time-series datasets.<a class="anchor" aria-label="anchor" href="#extracting-data-from-large-time-series-datasets"></a>
 </h2>
 <p>For extracting subsets of large datasets, it’s sometimes a good idea to loop over small subsets rather than extracting from a single large raster object with many (sometimes hundreds) of layers.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Extracts with a single call.</span></span>
 <span><span class="va">start1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">tmax1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span><span class="st">"R4D004"</span>,date_start<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2004-10-01"</span><span class="op">)</span>,date_end<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2004-10-31"</span><span class="op">)</span><span class="op">)</span></span>
@@ -272,53 +276,26 @@
 <span><span class="co">#&gt; Loading required package: iterators</span></span>
 <span><span class="co">#&gt; Warning: package 'iterators' was built under R version 4.1.2</span></span>
 <span><span class="co">#&gt; Loading required package: parallel</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: package 'sf' was built under R version 4.1.2</span></span>
+<span><span class="co">#&gt; Linking to GEOS 3.10.2, GDAL 3.4.2, PROJ 8.2.1; sf_use_s2() is TRUE</span></span>
+<span></span>
+<span><span class="co">## Can't pass SpatVector or SpatRaster objects via Foreach, so convert to sf.</span></span>
+<span><span class="va">locations_sf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html" class="external-link">st_as_sf</a></span><span class="op">(</span><span class="va">location_sv</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">start4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">##cl &lt;- parallel::makeCluster(4)</span></span>
-<span><span class="co">##doParallel::registerDoParallel(cl)</span></span>
+<span><span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html" class="external-link">makeCluster</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span></span>
+<span><span class="fu">doParallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/doParallel/man/registerDoParallel.html" class="external-link">registerDoParallel</a></span><span class="op">(</span><span class="va">cl</span><span class="op">)</span></span>
 <span><span class="va">days</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2007-10-01"</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2007-10-31"</span><span class="op">)</span>,by<span class="op">=</span><span class="st">"day"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">extr_list4</span> <span class="op">&lt;-</span> <span class="fu">foreach</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">foreach</a></span><span class="op">(</span>i<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">days</span><span class="op">)</span>,.packages<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"terra"</span>,<span class="st">"devtools"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">%do%</a></span> <span class="op">{</span></span>
-<span>  <span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span><span class="op">)</span> <span class="co">## During package development.</span></span>
+<span><span class="va">extr_list4</span> <span class="op">&lt;-</span> <span class="fu">foreach</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">foreach</a></span><span class="op">(</span>i<span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">days</span><span class="op">)</span>,.packages<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sf"</span>,<span class="st">"terra"</span>,<span class="st">"rSDP"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/foreach/man/foreach.html" class="external-link">%dopar%</a></span> <span class="op">{</span></span>
+<span>  <span class="co">#devtools::load_all() ## During package development.</span></span>
 <span>  <span class="va">tmax4</span> <span class="op">&lt;-</span> <span class="fu">rSDP</span><span class="fu">::</span><span class="fu"><a href="reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span><span class="st">"R4D004"</span>,date_start<span class="op">=</span><span class="va">days</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>,date_end<span class="op">=</span><span class="va">days</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>,verbose<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span>
-<span>  <span class="va">extr_dat</span> <span class="op">&lt;-</span> <span class="fu">rSDP</span><span class="fu">::</span><span class="fu"><a href="reference/sdp_extract_data.html">sdp_extract_data</a></span><span class="op">(</span><span class="va">tmax4</span>,<span class="va">locations_proj</span>,verbose<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">[</span>,<span class="fl">3</span><span class="op">]</span></span>
-<span>  <span class="op">(</span><span class="va">extr_dat</span><span class="op">)</span></span>
+<span>   <span class="va">extr_dat</span> <span class="op">&lt;-</span> <span class="fu">rSDP</span><span class="fu">::</span><span class="fu"><a href="reference/sdp_extract_data.html">sdp_extract_data</a></span><span class="op">(</span><span class="va">tmax4</span>,<span class="fu">vect</span><span class="op">(</span><span class="va">locations_sf</span><span class="op">)</span>,verbose<span class="op">=</span><span class="cn">FALSE</span>,</span>
+<span>                                      return_spatvector<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span><span class="op">[</span>,<span class="fl">3</span><span class="op">]</span></span>
+<span>   <span class="op">(</span><span class="va">extr_dat</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt; Warning: package 'terra' was built under R version 4.1.2</span></span>
-<span><span class="co">#&gt; terra 1.7.18</span></span>
-<span><span class="co">#&gt; Loading required package: usethis</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">#&gt; ℹ Loading rSDP</span></span>
-<span><span class="co">##parallel::stopCluster(cl)</span></span>
+<span><span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html" class="external-link">stopCluster</a></span><span class="op">(</span><span class="va">cl</span><span class="op">)</span></span>
 <span><span class="va">tmax_extr4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">cbind</span>,<span class="va">extr_list4</span><span class="op">)</span></span>
 <span><span class="va">elapsed4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="va">start4</span></span>
 <span></span>
@@ -327,10 +304,10 @@
 <span>                      timing<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">elapsed1</span>,<span class="va">elapsed2</span>,<span class="va">elapsed3</span>,<span class="va">elapsed4</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">timings</span></span>
 <span><span class="co">#&gt;                        approach        timing</span></span>
-<span><span class="co">#&gt; 1                   Single Call 20.00869 secs</span></span>
-<span><span class="co">#&gt; 2    Looping sdp_extract_data() 29.24743 secs</span></span>
-<span><span class="co">#&gt; 3 Looping over sdp_get_raster() 29.55975 secs</span></span>
-<span><span class="co">#&gt; 4                       Foreach 38.49043 secs</span></span></code></pre></div>
+<span><span class="co">#&gt; 1                   Single Call 19.70793 secs</span></span>
+<span><span class="co">#&gt; 2    Looping sdp_extract_data() 29.18842 secs</span></span>
+<span><span class="co">#&gt; 3 Looping over sdp_get_raster() 28.99906 secs</span></span>
+<span><span class="co">#&gt; 4                       Foreach 32.57772 secs</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

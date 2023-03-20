@@ -107,7 +107,7 @@
 <span class="r-in"><span><span class="co">## Gets information on all current datasets.</span></span></span>
 <span class="r-in"><span><span class="va">sdp_cat</span> <span class="op">&lt;-</span> <span class="fu">sdp_get_catalog</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">sdp_cat</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	78 obs. of  17 variables:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	136 obs. of  16 variables:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ CatalogID      : chr  "R1D001" "R1D002" "R1D003" "R1D004" ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ Release        : chr  "Release1" "Release1" "Release1" "Release1" ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ Type           : chr  "Hydro" "Hydro" "Hydro" "Hydro" ...</span>
@@ -120,7 +120,6 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ MinYear        : int  2018 2018 2018 2018 2018 2018 2018 2018 2018 2018 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ MaxYear        : int  2018 2018 2018 2018 2018 2018 2018 2018 2018 2018 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ TimeSeriesType : chr  "Single" "Single" "Single" "Single" ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ DataUnit       : chr  "categorical" "categorical" "categorical" "square meters" ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ DataScaleFactor: int  1 1 1 1 1 1 1 1 1 1 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ DataOffset     : int  0 0 0 0 0 0 0 0 0 0 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ Data.URL       : chr  "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release1/UER_streams_512k_mfd_1m_v2.tif" "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release1/UER_streams_512k_sfd_1m_v2.tif" "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release1/UER_basins_512k_mfd_1m_v2.tif" "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release1/UER_flow_accum_mfd_1m_v3.tif" ...</span>
@@ -152,17 +151,17 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span> 61         1m      FALSE  9/7/19  9/7/19    2019    2019         Single</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 73         2m      FALSE  9/7/19  9/7/19    2019    2019         Single</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 74         2m      FALSE  9/7/19  9/7/19    2019    2019         Single</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       DataUnit DataScaleFactor DataOffset</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 54  proportion               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 55  proportion               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 56      meters               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 57      meters               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 58      meters               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 59 categorical               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 60    unitless               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 61    unitless               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 73    unitless               1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 74    unitless               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    DataScaleFactor DataOffset</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 54               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 55               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 56               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 57               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 58               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 59               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 60               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 61               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 73               1          0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 74               1          0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                                                                   Data.URL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 54 https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_2mcover_3m_v2.tif</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 55   https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/released/release3/UG_canopy_cover_3m_v3.tif</span>
