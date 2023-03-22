@@ -61,6 +61,7 @@
 <span>  catalog_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  url <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  years <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  months <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  date_start <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  date_end <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -83,6 +84,10 @@
 
 <dt>years</dt>
 <dd><p>numeric. For annual time-series data, a numeric vector specifying which years to return. The default <code>NULL</code> returns all available years.</p></dd>
+
+
+<dt>months</dt>
+<dd><p>numeric. For monthly time-series data, a numeric vector specifying which months of data to return. The default <code>NULL</code> returns all available months.</p></dd>
 
 
 <dt>date_start</dt>
@@ -141,7 +146,7 @@ Specifying local downloads <code>download_files=TRUE</code> might be more effici
 <span class="r-out co"><span class="r-pr">#&gt;</span> coord. ref. : WGS 84 / UTM zone 13N (EPSG:32613) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> source      : UG_landcover_1m_v4.tif </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> color table : 1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> name        : UG_landcover_v4@UG_01m </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> name        : UG_landcover_1m_v4 </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

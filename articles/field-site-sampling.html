@@ -75,8 +75,10 @@
 
 
 
-
-<div class="row">
+<script src="field-site-sampling_files/htmlwidgets-1.6.2/htmlwidgets.js"></script><link href="field-site-sampling_files/leaflet-1.3.1/leaflet.css" rel="stylesheet">
+<script src="field-site-sampling_files/leaflet-1.3.1/leaflet.js"></script><link href="field-site-sampling_files/leafletfix-1.0.0/leafletfix.css" rel="stylesheet">
+<script src="field-site-sampling_files/proj4-2.6.2/proj4.min.js"></script><script src="field-site-sampling_files/Proj4Leaflet-1.0.1/proj4leaflet.js"></script><link href="field-site-sampling_files/rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet">
+<script src="field-site-sampling_files/leaflet-binding-2.1.1.9000/leaflet.js"></script><div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Sampling SDP Data Products at Field Sites</h1>
             
@@ -87,32 +89,227 @@
 
     
     
-<p><em>by <a href="ikb@rmbl.org">Ian Breckheimer</a>, updated 15 March
+<p><em>by <a href="ikb@rmbl.org">Ian Breckheimer</a>, updated 21 March
 2023.</em></p>
 <p>Data products generated as part of the RMBL Spatial Data Platform are
 meant to provide important environmental context for measurements
 collected in the field. Taking advantage of this requires us to extract
-the values of data products at the locations of field sites and generate
-appropriate summaries.</p>
-<p>For example, if we want to understand</p>
+the values of data products at or near the locations of field sites and
+generate appropriate summaries.</p>
+<p>This is not always as simple as it might seem. For example, if we
+want to understand how the persistence of spring snowpack affects the
+abundance or emergence timing of pollinators, we might want to gather
+information about patterns of snow persistence at the exact locations of
+our field sites, but also in the nearby landscape, since pollinators
+such as bees and butterflies can move distances of several hundred
+meters while foraging.</p>
+<p>So in this example, which measure of snow persistence is most
+relevant? Is it the mean timing within, say, 200 m that matters most, or
+is it the earliest (minimum) value since bees often nest on steep
+south-facing slopes that melt early? This is where we need to use a
+combination of data and intuition to guide us. The functions in the
+<code>rSDP</code> R package are designed to allow us to easily extract
+data at multiple scales and generate multiple summaries so we can let
+the science rather than the logistical limitations of field measurement
+guide our work.</p>
+<p>But before we get there, we need get field site data into the
+<code>R</code> environment and prepare it for extraction.</p>
+<div class="section level4">
+<h4 id="setting-up-the-environment-">Setting up the environment.<a class="anchor" aria-label="anchor" href="#setting-up-the-environment-"></a>
+</h4>
+<p>If you haven’t already, you will first need to install the relevant
+packages and load them into the working environment.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"rmbl-sdp/rSDP"</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"rstudio/leaflet"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"terra"</span>,<span class="st">"tidyterra"</span>,<span class="st">"sf"</span><span class="op">)</span>,type<span class="op">=</span><span class="st">"binary"</span><span class="op">)</span> <span class="co">## `binary` install prevents dependency issues on Mac and Windows</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/terra/" class="external-link">terra</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rstudio.github.io/leaflet/" class="external-link">leaflet</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rmbl-sdp/rSDP" class="external-link">rSDP</a></span><span class="op">)</span></span></code></pre></div>
+</div>
 <div class="section level2">
 <h2 id="reading-in-spatial-data-on-field-sites-">Reading in spatial data on field sites.<a class="anchor" aria-label="anchor" href="#reading-in-spatial-data-on-field-sites-"></a>
 </h2>
+<p>Most <code>R</code> users are familiar with <code>Data Frames</code>,
+the basic data structure for tabular, spreadsheet-style data.
+<code>Data Frames</code> work great for many datasets, but to work with
+spatial data, we need to link this tabular information to objects that
+describe the geometry of each geographic feature such as a study site or
+sampling area. There are a few different ways to do this:</p>
 <div class="section level4">
 <h4 id="tabular-data-with-coordinates">Tabular data with coordinates<a class="anchor" aria-label="anchor" href="#tabular-data-with-coordinates"></a>
 </h4>
+<p>In the simplest case, the locations of field sites can be read in
+along with other site data as a set of spatial coordinates. This is
+simplest with point data, where the location of each site can be
+described with two numbers that represent the X and Y coordinates of the
+site (latitude and longitude, for example).</p>
+<p>Here we read in a simple <code>Data Frame</code> that contains
+coordinates:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sites_xy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.csv"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sites_xy</span><span class="op">)</span></span>
+<span><span class="co">#&gt;           X        Y fid         Name</span></span>
+<span><span class="co">#&gt; 1 -106.9904 38.96237   1        Rocky</span></span>
+<span><span class="co">#&gt; 2 -106.9898 38.96222   2        Aspen</span></span>
+<span><span class="co">#&gt; 3 -106.9903 38.96083   3         Road</span></span>
+<span><span class="co">#&gt; 4 -106.9934 38.96006   4   BeaverPond</span></span>
+<span><span class="co">#&gt; 5 -106.9927 38.96023   5 GrassyMeadow</span></span>
+<span><span class="co">#&gt; 6 -106.9920 38.95807   6      Conifer</span></span></code></pre></div>
+<p>In this case, the <code>X</code> and <code>Y</code> fields represent
+decimal degrees of latitude and longitude. We can let <code>R</code>
+’know` that these are the coordinates this way:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sites_sf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html" class="external-link">st_as_sf</a></span><span class="op">(</span><span class="va">sites_xy</span>,coords<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"X"</span>,<span class="st">"Y"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sites_sf</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Simple feature collection with 6 features and 2 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POINT</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -106.9934 ymin: 38.95807 xmax: -106.9898 ymax: 38.96237</span></span>
+<span><span class="co">#&gt; CRS:           NA</span></span>
+<span><span class="co">#&gt;   fid         Name                   geometry</span></span>
+<span><span class="co">#&gt; 1   1        Rocky POINT (-106.9904 38.96237)</span></span>
+<span><span class="co">#&gt; 2   2        Aspen POINT (-106.9898 38.96222)</span></span>
+<span><span class="co">#&gt; 3   3         Road POINT (-106.9903 38.96083)</span></span>
+<span><span class="co">#&gt; 4   4   BeaverPond POINT (-106.9934 38.96006)</span></span>
+<span><span class="co">#&gt; 5   5 GrassyMeadow POINT (-106.9927 38.96023)</span></span>
+<span><span class="co">#&gt; 6   6      Conifer  POINT (-106.992 38.95807)</span></span></code></pre></div>
+<p>The above code creates a new object that still has the tabular data
+in the original file, but has a new column <code>geometry</code> to hold
+the spatial coordinates. Technically, this data is now a “Simple Feature
+Collection”. For more information on Simple Features, check out the
+article “Wrangling Spatial Data”.</p>
+<p>We are almost in business! There is one missing piece, however. When
+we create spatial objects this way, we also need to assign a Coordinate
+Reference System. Basically, we need to let <code>R</code> know that
+these coordinates represent latitudes and longitudes and not some other
+system of referencing coordinates. We do this by assigning an <a href="https://epsg.io/" class="external-link">EPSG Code</a> to the dataset. There are
+thousands of different coordinate reference systems out there, so the
+codes are a shorthand to uniquely assign a coordinate system.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_crs</a></span><span class="op">(</span><span class="va">sites_sf</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"EPSG:4326"</span></span>
+<span><span class="va">sites_sf</span></span>
+<span><span class="co">#&gt; Simple feature collection with 9 features and 2 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POINT</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -106.9934 ymin: 38.95576 xmax: -106.9839 ymax: 38.96237</span></span>
+<span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span>
+<span><span class="co">#&gt;   fid           Name                   geometry</span></span>
+<span><span class="co">#&gt; 1   1          Rocky POINT (-106.9904 38.96237)</span></span>
+<span><span class="co">#&gt; 2   2          Aspen POINT (-106.9898 38.96222)</span></span>
+<span><span class="co">#&gt; 3   3           Road POINT (-106.9903 38.96083)</span></span>
+<span><span class="co">#&gt; 4   4     BeaverPond POINT (-106.9934 38.96006)</span></span>
+<span><span class="co">#&gt; 5   5   GrassyMeadow POINT (-106.9927 38.96023)</span></span>
+<span><span class="co">#&gt; 6   6        Conifer  POINT (-106.992 38.95807)</span></span>
+<span><span class="co">#&gt; 7   7 WeatherStation POINT (-106.9859 38.95641)</span></span>
+<span><span class="co">#&gt; 8   8        Smelter POINT (-106.9839 38.95576)</span></span>
+<span><span class="co">#&gt; 9   9     Roundabout  POINT (-106.988 38.95808)</span></span></code></pre></div>
+<p>The summary no longer says <code>CRS: NA</code> but instead reads
+<code>Geodetic CRS: WGS 84</code>. This tells us that we have
+successfully assigned a coordinate system to the data!</p>
+<p>How do we make sure we have assigned the correct one (e.g. the right
+EPSG Code)? The simplest way is to plot the data on a web map.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plet.html" class="external-link">plet</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">sites_sf</span><span class="op">)</span>,tiles<span class="op">=</span><span class="st">"Streets"</span>,col<span class="op">=</span><span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
+<div class="leaflet html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-43d6e342e0e02626d3bc" style="width:700px;height:432.632880098888px;"></div>
+<script type="application/json" data-for="htmlwidget-43d6e342e0e02626d3bc">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addTiles","args":["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",null,"Streets",{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org/copyright/\">OpenStreetMap<\/a>,  <a href=\"https://opendatacommons.org/licenses/odbl/\">ODbL<\/a>"}]},{"method":"addCircleMarkers","args":[[38.9623663136723,38.9622196678494,38.9608295818747,38.9600639769219,38.9602322818984,38.9580706104493,38.956406827484,38.9557577590962,38.9580840935092],[-106.990393557051,-106.989832978539,-106.990338039869,-106.993436521846,-106.99272847316,-106.991964536894,-106.985903510844,-106.983884764097,-106.98802605942],1,null,null,{"interactive":true,"className":"","stroke":true,"color":["red","red","red","red","red","red","red","red","red"],"weight":5,"opacity":1,"fill":true,"fillColor":["red","red","red","red","red","red","red","red","red"],"fillOpacity":0.2},null,null,["fid: 1<br>Name: Rocky","fid: 2<br>Name: Aspen","fid: 3<br>Name: Road","fid: 4<br>Name: BeaverPond","fid: 5<br>Name: GrassyMeadow","fid: 6<br>Name: Conifer","fid: 7<br>Name: WeatherStation","fid: 8<br>Name: Smelter","fid: 9<br>Name: Roundabout"],null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]}],"limits":{"lat":[38.9557577590962,38.9623663136723],"lng":[-106.993436521846,-106.983884764097]}},"evals":[],"jsHooks":[]}</script><p>Since I know that these points represent sites close to Rocky
+Mountain Biological Lab in Gothic, CO. I can be pretty sure that I’ve
+assigned the correct coordinate system.</p>
+<p>What if you don’t know the EPSG code that corresponds to the
+coordinates in your dataset? You can look up the code on the handy
+website <a href="https://epsg.io/" class="external-link">epsg.io</a>.</p>
 </div>
 <div class="section level4">
 <h4 id="geojson-and-geopackage-files">GeoJSON and GeoPackage files<a class="anchor" aria-label="anchor" href="#geojson-and-geopackage-files"></a>
 </h4>
+<p>Reading coordinates in .csv text files works great with point data,
+but becomes cumbersome when we’ve got data with more complicated
+geometries such as lines and polygons. In these cases we will usually
+want to read data in a format that is explicitly designed for spatial
+information. There are two open data formats that are in most widespread
+use:</p>
+<ul>
+<li>geoJSON, an open plain-text data <a href="https://en.wikipedia.org/wiki/GeoJSON" class="external-link">format</a> that works
+really well for small to medium-sized datasets (up to a few hundred
+MB).</li>
+<li>GeoPackage, an open geospatial database <a href="https://www.geopackage.org/" class="external-link">format</a> based on SQLITE that can
+efficiently store larger and more complex datasets than geoJSON,
+including related tables and layers with multiple geometry types.</li>
+</ul>
+<p>Both formats can be read into <code>R</code> using the
+<code><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read()</a></code> function in the <code>sf</code> package:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sites_gj</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.geojson"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Reading layer `rSDP_example_points_latlon' from data source </span></span>
+<span><span class="co">#&gt;   `https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.geojson' </span></span>
+<span><span class="co">#&gt;   using driver `GeoJSON'</span></span>
+<span><span class="co">#&gt; Simple feature collection with 9 features and 2 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POINT</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -106.9934 ymin: 38.95576 xmax: -106.9839 ymax: 38.96237</span></span>
+<span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span></code></pre></div>
+<p>Since we are reading a geospatial format that already has spatial
+reference information, we don’t need to assign an EPSG code.</p>
+<p>Similarly, for a GeoPackage:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sites_gp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.gpkg"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Reading layer `rsdp_example_points_latlon' from data source </span></span>
+<span><span class="co">#&gt;   `https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.gpkg' </span></span>
+<span><span class="co">#&gt;   using driver `GPKG'</span></span>
+<span><span class="co">#&gt; Simple feature collection with 9 features and 1 field</span></span>
+<span><span class="co">#&gt; Geometry type: POINT</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -106.9934 ymin: 38.95576 xmax: -106.9839 ymax: 38.96237</span></span>
+<span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span></code></pre></div>
+<p>Although these examples are reading data directly from a web source,
+the function works just as well on local files by substituting in the
+path to the file.</p>
 </div>
 <div class="section level4">
-<h4 id="shapefiles">Shapefiles<a class="anchor" aria-label="anchor" href="#shapefiles"></a>
+<h4 id="esri-shapefiles">ESRI Shapefiles<a class="anchor" aria-label="anchor" href="#esri-shapefiles"></a>
 </h4>
-</div>
-<div class="section level4">
-<h4 id="web-services">Web services<a class="anchor" aria-label="anchor" href="#web-services"></a>
-</h4>
+<p>Shapefiles are a file format commonly used by the GIS software suite
+ArcGIS. Although they have some important limitations, they are still a
+common way to share geographic data. These files can also be read into R
+using <code><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read()</a></code>.</p>
+<p>Because shapefiles are actually a collection of related files, we
+need to download them locally first before loading.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Downloads files to a temporary directory.</span></span>
+<span><span class="va">URL</span> <span class="op">&lt;-</span> <span class="st">"https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.shp.zip"</span></span>
+<span><span class="va">cur_tempfile</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/download.file.html" class="external-link">download.file</a></span><span class="op">(</span>url <span class="op">=</span> <span class="va">URL</span>, destfile <span class="op">=</span> <span class="va">cur_tempfile</span><span class="op">)</span></span>
+<span><span class="va">out_directory</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/unzip.html" class="external-link">unzip</a></span><span class="op">(</span><span class="va">cur_tempfile</span>, exdir <span class="op">=</span> <span class="va">out_directory</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Loads into R.</span></span>
+<span><span class="va">sites_shp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span>dsn <span class="op">=</span> <span class="va">out_directory</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Reading layer `rSDP_example_points_latlon' from data source </span></span>
+<span><span class="co">#&gt;   `/private/var/folders/yb/cc222hs54cg4ncd3_k6n9sn00000gn/T/RtmpG7VPdc/file78745c51eed2' </span></span>
+<span><span class="co">#&gt;   using driver `ESRI Shapefile'</span></span>
+<span><span class="co">#&gt; Simple feature collection with 9 features and 2 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POINT</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -106.9934 ymin: 38.95576 xmax: -106.9839 ymax: 38.96237</span></span>
+<span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span>
+<span><span class="va">sites_shp</span></span>
+<span><span class="co">#&gt; Simple feature collection with 9 features and 2 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POINT</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -106.9934 ymin: 38.95576 xmax: -106.9839 ymax: 38.96237</span></span>
+<span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span>
+<span><span class="co">#&gt;   fid           Name                   geometry</span></span>
+<span><span class="co">#&gt; 1   1          Rocky POINT (-106.9904 38.96237)</span></span>
+<span><span class="co">#&gt; 2   2          Aspen POINT (-106.9898 38.96222)</span></span>
+<span><span class="co">#&gt; 3   3           Road POINT (-106.9903 38.96083)</span></span>
+<span><span class="co">#&gt; 4   4     BeaverPond POINT (-106.9934 38.96006)</span></span>
+<span><span class="co">#&gt; 5   5   GrassyMeadow POINT (-106.9927 38.96023)</span></span>
+<span><span class="co">#&gt; 6   6        Conifer  POINT (-106.992 38.95807)</span></span>
+<span><span class="co">#&gt; 7   7 WeatherStation POINT (-106.9859 38.95641)</span></span>
+<span><span class="co">#&gt; 8   8        Smelter POINT (-106.9839 38.95576)</span></span>
+<span><span class="co">#&gt; 9   9     Roundabout  POINT (-106.988 38.95808)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -161,7 +358,7 @@ appropriate summaries.</p>
 <div class="section level4">
 <h4 id="parallel-processing">Parallel processing<a class="anchor" aria-label="anchor" href="#parallel-processing"></a>
 </h4>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/rmbl-sdp/rSDP" class="external-link">rSDP</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
