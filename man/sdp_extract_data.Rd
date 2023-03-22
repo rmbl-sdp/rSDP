@@ -37,11 +37,11 @@ sdp_extract_data(
 
 \item{bind}{logical. Should the extracted data be bound to the inputs? If not, a dataset is returned with the ID field in common with input data.}
 
-\item{return_type}{character. Class of the output. If \code{return_type = 'SpatVector'}, retains geometry (as class \code{terra::SpatVector}). If \code{return_type = 'SpatVector'} then also retains geometry as a Simple Features object (class \code{sf::sf}). If \code{return_type = 'DataFrame'} returns an ordinary data frame.}
+\item{return_type}{character. Class of the output. If \code{return_type = 'SpatVector'}, retains geometry (as class \code{terra::SpatVector}). If \code{return_type = 'sf'} then also retains geometry as a Simple Features object (class \code{sf::sf}). If \code{return_type = 'DataFrame'} returns an ordinary data frame.}
 
-\item{method}{Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells. Ignored if \code{locations} represent lines or points.}
+\item{method}{Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells. Ignored if \code{locations} represent lines or polygons.}
 
-\item{sum_fun}{character or function. Function to use to summarize raster cells that overlap input features. Ignored if extracting by point.}
+\item{sum_fun}{character or function. Function to use to summarize raster cells that overlap input features. Ignored if extracting by point. If \code{NULL}, and locations represent lines or polygons, the function returns all cell values.}
 
 \item{verbose}{logical. Should the function print messages about the process?}
 
