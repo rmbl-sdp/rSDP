@@ -252,9 +252,9 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
 #' @param catalog_id character. Alternative method of specifying which dataset to sample. NOT IMPLEMENTED YET.
 #' @param url_template character. Alternative method of specifying whic dataset to sample. NOT IMPLEMENTED YET.
 #' @param bind logical. Should the extracted data be bound to the inputs? If not, a dataset is returned with the ID field in common with input data.
-#' @param return_type character. Class of the output. If `return_type = 'SpatVector'`, retains geometry (as class `terra::SpatVector`). If `return_type = 'SpatVector'` then also retains geometry as a Simple Features object (class `sf::sf`). If `return_type = 'DataFrame'` returns an ordinary data frame.
-#' @param method Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells. Ignored if `locations` represent lines or points.
-#' @param sum_fun character or function. Function to use to summarize raster cells that overlap input features. Ignored if extracting by point.
+#' @param return_type character. Class of the output. If `return_type = 'SpatVector'`, retains geometry (as class `terra::SpatVector`). If `return_type = 'sf'` then also retains geometry as a Simple Features object (class `sf::sf`). If `return_type = 'DataFrame'` returns an ordinary data frame.
+#' @param method Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells. Ignored if `locations` represent lines or polygons.
+#' @param sum_fun character or function. Function to use to summarize raster cells that overlap input features. Ignored if extracting by point. If `NULL`, and locations represent lines or polygons, the function returns all cell values.
 #' @param verbose logical. Should the function print messages about the process?
 #' @param ... other arguments to pass along to `terra::Extract()`
 #'

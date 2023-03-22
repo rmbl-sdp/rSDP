@@ -20,7 +20,7 @@ Data products generated as part of the RMBL Spatial Data Platform are meant to p
 
 This is not always as simple as it might seem. For example, if we want to understand how the persistence of spring snowpack affects the abundance or emergence timing of pollinators, we might want to gather information about patterns of snow persistence at the exact locations of our field sites, but also in the nearby landscape, since pollinators such as bees and butterflies can move distances of several hundred meters while foraging.
 
-So in this example, which measure of snow persistence is most relevant? Is it the mean timing within, say, 200 m that matters most, or is it the earliest (minimum) value since bees often nest on steep south-facing slopes that melt early? This is where we need to use a combination of data and intuition to guide us. The functions in the `rSDP` R package are designed to allow us to easily extract data at multiple scales and generate multiple summaries so we can let the science rather than the logistical limitations of field measurement guide our work.
+So in the example above, which measure of snow persistence is most relevant? Is it the mean timing within, say, 200 m that matters most, or is it the earliest (minimum) value since bees often nest on steep south-facing slopes that melt early? This is where we need to use a combination of data and intuition to guide us. The functions in the `rSDP` R package are designed to allow us to easily extract data at multiple scales and generate multiple summaries so we can let the science rather than the logistical limitations of field measurement guide our work.
 
 But before we get there, we need get field site data into the `R` environment and prepare it for extraction.
 
@@ -149,44 +149,383 @@ cat_snow_single[,1:6]
 Once we've identified the product of interest, we can load it into R using `sdp_get_raster()`:
 
 ```{r single snow}
-snow_duration_mean <- sdp_get_raster(catalog_id="R4D057")
-snow_duration_mean
+snow_persist_mean <- sdp_get_raster(catalog_id="R4D061")
+snow_persist_mean
 ```
 
 We can confirm this is a single layer dataset by checking the number of layers using the `nlyr()` function in `terra`:
 
 ```{r snow nlyr}
-nlyr(snow_duration_mean)
+nlyr(snow_persist_mean)
 ```
+What if we wanted to learn a bit more about this dataset? For example, what are the units of snow duration? We can look up this basic metadata for SDP datasets in the catalog
+```{r units}
+cat_line <- dplyr::filter(cat_snow_single,CatalogID=="R4D062")
+cat_line$DataUnit
+```
+If we want more detailed geospatial metadata, we can retrieve the full metadata for a dataset using `sdp_get_metadata()`
+
+```{r meta}
+snow_persist_meta <- sdp_get_metadata("R4D062")
+writeLines(snow_persist_meta$qgis$abstract[[1]][1])
+```
+
 We can also plot this dataset on a web map:
-```{r plet snow}
-plet(snow_duration_mean,tiles="Streets")
+
+```{r plet snow,out.width="100%"}
+plet(snow_persist_mean,tiles="Streets",main="Snowpack Persistence \n (day of year)")
 ```
 
 #### Raster time-series
 
+Rather than representing single layer data, some SDP data products are delivered as time-series, with multiple related maps representing data at daily, monthly, or yearly intervals. Connecting to these datasets is identical to single-layer data, but the returned object has multiple layers. For example, to connect to the dataset representing yearly time-series of snowpack persistence:
+
+```{r snow multilayer}
+cat_snow_yearly <- sdp_get_catalog(types=c("Snow"),releases=c("Release4"),timeseries_type="Yearly")
+snow_persist_yearly <- sdp_get_raster("R4D001")
+```
+The default for yearly time-series is to return all the years of available data. Alternatively, we can return a subset of years by specifying the `years` argument:
+
+```{r snow recent}
+snow_persist_recent <- sdp_get_raster("R4D001",years=c(2018:2022))
+snow_persist_recent
+```
+To keep track of which layers represent which time intervals, we can look at the name of each layer:
+
+```{r layer names}
+names(snow_persist_recent)
+```
+
+#### Basic plotting
+
+We can plot a subset of layers on a web map like this:
+
+```{r multilayer plot}
+plet(snow_persist_recent, c("2018","2019"),
+     tiles="Streets",shared=TRUE,collapse=FALSE)
+```
+This plots a resampled, lower resolution version of the two layers.
 
 ## Extracting data at field sites
 
+Now that we have the field site data and raster data products loaded into R, we are almost ready to sample the values of those products at our field sites. There is one last step, however.
+
 #### Re-projecting field site data
+
+Because the field site data and spatial data products are in different coordinate systems, we need to "re-project" the field site data to match the coordinate system of the raster data. We can do this using the `st_transform()` function in the `sf` package.
+
+```{r reproject}
+sites_proj <- vect(st_transform(sites_sf,crs=crs(snow_persist_recent)))
+crs(sites_proj)==crs(snow_persist_recent)
+```
+
+For more about coordinate systems and transformations, see the article "Wrangling Spatial Data".
 
 #### Simple extraction at points
 
+Now that we've got our field site data and raster data products in the same coordinate system, we are ready to summarize the values of the products at our sites. We do this using the function `sdp_extract_data()`. In the simplest case, all we want to do is get the values of the raster cells that overlap the locations of the points. We can do so like this:
+
+```{r extract simple}
+snow_sample_simple <- sdp_extract_data(snow_persist_recent,sites_proj,method="simple")
+snow_sample_simple$method <- "simple"
+head(snow_sample_simple)
+```
+
+The first two arguments to the `sdp_extract_data()` function are the spatial data product to sample and the field site locations. Specifying `method='Simple` returns the raw raster values without interpolation.
+
+As an alternative, we can also extract interpolated values, that is values that summarize the the values of cells surrounding a point. Since research sites rarely fall on the exact center of raster cells, this can sometimes yield better estimates:
+
+```{r extract bilin}
+snow_sample_bilin <- sdp_extract_data(snow_persist_recent,sites_proj,method="bilinear")
+snow_sample_bilin$method <- "bilinear"
+```
+
+Comparing the interpolated values to the simple extracted values, we see that this choice does make a bit of difference:
+
+```{r extract compare}
+snow_sample <- as.data.frame(rbind(snow_sample_simple, snow_sample_bilin))
+snow_long <- tidyr::pivot_longer(snow_sample,cols=contains("X"),names_to="year",values_to="snow_persist_doy")
+snow_wide <- tidyr::pivot_wider(snow_long,names_from="method",values_from="snow_persist_doy")
+
+plot(bilinear~simple,data=snow_wide,xlab="Simple Extraction",ylab="Bilinear Interpolation")
+```
+How much the extraction method matters depends on the spatial resolution of the source data and how variable it is across space. In general, the method matters more for coarser resolution datasets.
+
 #### Buffered extraction at points with summaries
 
-#### Extracting using lines and polygons
+The above example extracts data at the exact locations of points. But what if we want to get a sense of how the datasets vary in the landscape surrounding the points? In this case we need to create a new polygon dataset that covers areas within a certain distance of the points. We can accomplish this using the `st_buffer()` function in the `sf` package:
 
-#### Time-series data
+```{r point buffer}
+sites_buff100 <- st_buffer(st_as_sf(sites_proj),dist=100)
+```
+}
 
+The above code creates circular polygons centered on each point with a radius of 100m. We can examine the results by plotting the original points and and the buffers on a web map:
+
+```{r web buff,out.width="100%"}
+plet(vect(sites_buff100),tiles="Streets",col="grey20",alpha=0.2) |>
+  points(sites_proj,col="black")
+```
+The grey shaded areas are those covered by the buffered polygons. 
+
+We can now use these polygons to extract raster values that are covered by the polygon areas. Since there are multiple raster cells that fall within each polygon, we need to specify a function to use to summarize the values of those cells for each polygon. The default is to compute the mean value for each, but we can also specify any `R` function that takes a vector for input and returns a single value. For example, here we compute the mean, minimum, and maximum as well as 25th and 75th percentiles of snow persistence in the buffered areas:
+
+```{r buff ext}
+snow_sample_mean <- sdp_extract_data(snow_persist_recent,vect(sites_buff100))
+snow_sample_mean$stat <- "mean"
+snow_sample_min <- sdp_extract_data(snow_persist_recent,vect(sites_buff100),
+                                    sum_fun="min")
+snow_sample_min$stat <- "min"
+snow_sample_q25 <- sdp_extract_data(snow_persist_recent,vect(sites_buff100),
+                                    sum_fun=function(x) quantile(x,probs=c(0.25))) #25th percentile
+snow_sample_q25$stat <- "q25"
+snow_sample_q75 <- sdp_extract_data(snow_persist_recent,vect(sites_buff100),
+                                    sum_fun=function(x) quantile(x,probs=c(0.75))) # 75th percentile
+snow_sample_q75$stat <- "q75"
+snow_sample_max <- sdp_extract_data(snow_persist_recent,vect(sites_buff100),
+                                    sum_fun="max")
+snow_sample_max$stat <- "max"
+```
+Now that we have the extracted data, we can reshape it for visualization.
+
+```{r summery vis}
+snow_sample_stats <- as.data.frame(rbind(snow_sample_min,
+                           snow_sample_q25,
+                           snow_sample_mean,
+                           snow_sample_q75,
+                           snow_sample_max))
+snow_stats_long <- tidyr::pivot_longer(snow_sample_stats,cols=contains("X"),
+                                names_to="year",values_to="snow_persist_doy")
+snow_stats_wide <- tidyr::pivot_wider(snow_stats_long,names_from="stat",values_from="snow_persist_doy")
+snow_stats_wide$year <- gsub("X","",snow_stats_wide$year)
+head(snow_stats_wide)
+```
+
+The code above binds the rows of the extracted data together and then reshapes it using the `pivot_longer` and `pivot_wider` functions (in the `tidyr` package) so that the different summaries are represented by different variables. We can then plot the summaries of spatial variability in snow persistence across sites and years:
+
+```{r plot snow sums,out.width="100%",fig.cap="Spatial variability in spring snowpack persistence from 2018 to 2022. The thin lines span range between minimum and maximum values within 100 m of field sites, the thick lines represent the range from the 25th to 75th percentile. The open circles represent the mean."}
+library(ggplot2)
+ggplot(snow_stats_wide)+
+  geom_linerange(aes(x=Name,ymin=min,ymax=max,color=year),
+                 linewidth=0.5,position=position_dodge(width=0.5))+
+  geom_linerange(aes(x=Name,ymin=q25,ymax=q75,color=year),
+                 linewidth=1.5,position=position_dodge(width=0.5))+
+  geom_point(aes(x=Name,y=mean,fill=year), shape=21, color="black",size=1.5,
+             position=position_dodge(width=0.5))+
+  scale_y_continuous("Spring Snowpack Persistence (Day of Year)")+
+  scale_x_discrete("Site")+
+  theme_bw()
+```
+
+We can see that sites melt out from seasonal snowpack in a predictable sequence, with the "Rocky", "Road", and "Aspen" sites usually the first to melt, and the others usually later. We can also see the tremendous variability between years, with sites in 2018 melting more than 3 weeks earlier than in 2019. 
+
+We can also see that the late-melting year (2019) shows reduced variability in melt timing in the landscape surrounding most sites. This is evident in the smaller range between the minimum and maximum values as well as the reduced variability between sites.
+
+#### Extracting summaries using lines and polygons
+
+The example above creates polygons buffering field sites represented by points, but we can also summarise data products using other polygon and vector data. The example below reads in a polygon representing the Gothic Townsite area and computes summaries of snow dissapearance across the entire polygon:
+
+```{r snow summary}
+## Reads in polygons
+gt_poly <- vect(st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/GT_region_vect_1m.geojson"))
+
+## Extracts summaries
+snow_gt_mean <- sdp_extract_data(snow_persist_recent,gt_poly)
+snow_gt_mean$stat <- "mean"
+snow_gt_min <- sdp_extract_data(snow_persist_recent,gt_poly,
+                                    sum_fun="min")
+snow_gt_min$stat <- "min"
+snow_gt_q10 <- sdp_extract_data(snow_persist_recent,gt_poly,
+                                    sum_fun=function(x) quantile(x,probs=c(0.1))) #25th percentile
+snow_gt_q10$stat <- "q10"
+snow_gt_q90 <- sdp_extract_data(snow_persist_recent,gt_poly,
+                                    sum_fun=function(x) quantile(x,probs=c(0.9))) # 75th percentile
+snow_gt_q90$stat <- "q90"
+snow_gt_max <- sdp_extract_data(snow_persist_recent,gt_poly,
+                                    sum_fun="max")
+snow_gt_max$stat <- "max"
+
+## Binds output together
+snow_gt_stats <- as.data.frame(rbind(snow_gt_min,
+                                    snow_gt_q10,
+                                    snow_gt_mean,
+                                    snow_gt_q90,
+                                    snow_gt_max))
+
+## Reshapes for plotting.
+snow_gt_long <- tidyr::pivot_longer(snow_gt_stats,cols=contains("X"),
+                                names_to="year",values_to="snow_persist_doy")
+snow_gt_wide <- tidyr::pivot_wider(snow_gt_long,names_from="stat",values_from="snow_persist_doy")
+snow_gt_wide$year <- gsub("X","",snow_gt_wide$year)
+
+## Plots variability.
+ggplot(snow_gt_wide)+
+  geom_linerange(aes(x=year,ymin=min,ymax=max,color=year),
+                 linewidth=0.5,position=position_dodge(width=0.5))+
+  geom_linerange(aes(x=year,ymin=q10,ymax=q90,color=year),
+                 linewidth=1.5,position=position_dodge(width=0.5))+
+  geom_point(aes(x=year,y=mean,fill=year), shape=21, color="black",size=1.5,
+             position=position_dodge(width=0.5))+
+  scale_y_continuous("Spring Snowpack Persistence (Day of Year)")+
+  scale_x_discrete("year")+
+  theme_bw()
+```
+
+#### Summarising categorical data products
+
+The strategies above work well for summarising data products that represent continuous numeric values, but categorical rasters such as land cover maps pose an additional challenge. Most summary functions that make sense for continuous data (e.g. mean, median, max) do not make sense for categorical data.
+
+As an example, we can load a landcover map for the vicinity of the Gothic Townsite polygon we loaded above.
+
+```{r load lc}
+ug_lc <- sdp_get_raster("R3D018")
+lc_crop <- crop(ug_lc,st_bbox(gt_poly))
+
+plot(lc_crop,main="Gothic Landcover")
+plot(gt_poly,add=TRUE)
+```
+What if we want to estimate what proportion of the study area is covered by each landcover class? In this case, we want to extract all the raster values within the polygon and then summarise them. We can accomplish this using a combination of the `sdp_extract_data()` function along with the `group_by()` and `summarise()` functions in the `dplyr` package:
+
+```{r extract all}
+gt_lc_all <- sdp_extract_data(lc_crop,gt_poly,bind=FALSE,return_type="DataFrame",
+                              sum_fun=NULL,weights=TRUE)
+str(gt_lc_all)
+```
+
+When we specify `sum_fun=NULL` in the `sdp_extract_data()` function above, the function returns a data frame with all of the (~1.1 million) cell values that intersect the polygon. By specifying `weights=TRUE` we also return the proportion of each raster cell that is covered by the polygon. If cells along the boundary of the polygon are partially covered, then their `weight` in the resulting data will be less than one.
+
+Now we can summarise these values for each landcover class:
+
+```{r groupby, warning=FALSE}
+library(dplyr)
+gt_area <- st_area(st_as_sf(gt_poly))
+cell_size <- res(lc_crop)
+
+gt_lc_sum <- gt_lc_all %>% 
+            group_by(UG_landcover_1m_v4) %>% 
+            summarise(n_cells=sum(weight),
+                      covertype_area=n_cells*cell_size[1],
+                      covertype_prop=covertype_area/gt_area)
+gt_lc_sum
+```
+
+Now we've got an estimate of the area and proportion of each landcover class in the polygon. The classes have numeric codes, but we can match these with the names of the landcover classes from the metadata:
+
+```{r lc join}
+lc_meta <- sdp_get_metadata("R3D018")
+lc_codes <- 1:12
+lc_classes<- c("evergreen trees and shrubs",
+             "deciduous trees greater than 2m tall",
+             "meadow, grassland and subshrub",
+             "persistent open water", 
+             "persistent snow and ice",
+             "rock, bare soil, and sparse vegetation",
+             "building or structure", 
+             "paved or other impervious surface",
+             "irrigated pasture and other cultivated lands",
+             "deciduous shrubs up to 2m tall",
+             "evergreen forest understory and small gap",
+             "deciduous forest understory and small gap")
+lc_df <- data.frame(UG_landcover_1m_v4=lc_codes,
+                    class_name=lc_classes)
+gt_lc_names <- left_join(gt_lc_sum,lc_df,by="UG_landcover_1m_v4")
+gt_lc_names[,-1]
+```
+
+Success! Although this example uses a single polygon, a similar workflow would work for datasets that contain multiple polygons as well as line data.
 
 ## Strategies for boosting performance
 
-#### Downloading data locally
+In the examples above, we have limited the amount of data that we need to download locally by connecting to data products stored on the cloud. For many use cases, this is great, but sometimes these operations can be quite slow, and are often limited by the speed of your internet connection.
+
+Below are a few strategies for speeding up extracting data for large rasters, rasters with lots of layers, and / or large numbers of field sites:
+
+#### Downloading raster data locally
+
+The default behavior of `sdp_get_raster()` is to connect to a cloud-based data source without downloading the file(s) locally. If an extraction operation is prohibitively slow, sometimes it makes sense to download the files locally before running `sdp_extract_data()`. 
+
+To download the files, you need to specify `download_files=TRUE` and then a local file path for storing the files:
+
+```{r}
+snow_persist_local <- sdp_get_raster("R4D001", years = c(2018:2022), download_files = TRUE,
+                                     download_path = "~/Downloads",overwrite=FALSE)
+```
+
+With the default argument `overwrite=FALSE` the function will download files for any layers that don't already exist in the local filesystem and then create a `SpatRaster` object that is linked to the local datasource instead of the cloud. If all of the files already exist locally, then no files will be downloaded. This means that after the initial download step, subsequent calls to `sdp_get_raster()` that reference those same files (or subsets of those files) will not result in additional downloads. Specifying `overwrite=TRUE` will cause datasets to be re-downloaded each time the function is run.
+
+We can look at the speedup conferred by local downloads for large extraction operations. The function `spatSample()` in the `terra` package generates (potentially large) random or regular samples of raster cells. Here we use this function to compare the speed of extractions on cloud-based and local datasets:
+
+```{r sample extract}
+# Cloud-based dataset
+start <- Sys.time()
+sample_cloud <- spatSample(snow_persist_recent,size=100,method="random")
+Sys.time() - start
+
+# Local dataset.
+start <- Sys.time()
+sample_local <- spatSample(snow_persist_local,size=100,method="random")
+Sys.time() - start
+```
+If the datasets already exist locally, then the operation is *much* faster. Obviously this doesn't take into consideration the amount of time it takes to download the files initially.
+
+#### Crop then extract
+
+Another strategy is effective when the sites to sample or extract data cover a small portion of the extent of the full raster. In this case, it can be more efficient to crop the raster to the extent of the sites before performing the extraction. Cropping a cloud-based dataset will download only the cropped subset of the data desired. 
+
+As an example of this strategy, we will generate a large number of random points within the boundary of the Gothic Townsite polygon we loaded earlier, and then crop a large elevation dataset to the extent of the raster.
+
+```{r raster crop}
+gt_pts <- spatSample(gt_poly,size=1000)
+dem <- sdp_get_raster("R3D008")
+dem_crop <- crop(dem,gt_pts)
+ncell(dem_crop)
+c("ncells_full"=ncell(dem),"ncells_cropped"=ncell(dem_crop))
+```
+The much smaller cropped dataset is now stored in memory locally, so now subsequent operations will be very fast.
+
+```{r extract crop}
+start <- Sys.time()
+elev_extract_full <- sdp_extract_data(dem,locations=gt_pts)
+Sys.time() - start
+
+start <- Sys.time()
+elev_extract_cropped <- sdp_extract_data(dem_crop,locations=gt_pts)
+Sys.time() - start
+```
 
 #### Parallel processing
 
+For extraction operations that get data from a large number of layers (such as daily climate time-series), it can make sense to do the extraction in parallel across multiple `R` processes. The `foreach` and `doParallel` packages provide facilities for setting up this kind of parallel process. The core of this workflow is a call to the function `foreach`, which is similar to a standard `for` loop, but allows different iterations of the loop to be sent to independent R processes.
 
+A complication with parallel processing for this use case is that it's currently not possible to pass `SpatVector` or `SpatRaster` objects between the parent R process and the parallel worker processes. This means that we need to create separate `SpatRaster` objects for subsets of data to be processed in parallel.
 
-```{r setup}
-library(rSDP)
+Here's an example of parallel extraction of daily air temperature time-series for the small number of research sites we worked with earlier:
+
+```{r temp parallel, warning=FALSE}
+library(foreach)
+library(doParallel)
+
+## Can't pass SpatVector or SpatRaster objects via Foreach, so convert to sf.
+locations_sf <- st_as_sf(sites_proj)
+
+## Sets the number of parallel processes.
+n_workers <- 4
+
+start <- Sys.time()
+cl <- makeCluster(n_workers)
+registerDoParallel(cl)
+days <- seq(as.Date("2018-06-01"),as.Date("2020-05-30"), by="month")
+
+extr_list <- foreach(i=1:length(days),.packages=c("terra","rSDP","sf")) %dopar% {
+  tmax <- sdp_get_raster("R4D007",date_start=days[i],date_end=days[i],verbose=FALSE)
+   locations_sv <- vect(locations_sf)
+   extr_dat <- sdp_extract_data(tmax,locations=locations_sv,verbose=FALSE,
+                                      return_type="SpatVector")[,4]
+   extr_df <- as.data.frame(st_drop_geometry(st_as_sf(extr_dat)))
+   (extr_df)
+}
+stopCluster(cl)
+tmax_extr <- cbind(locations_sf,do.call(cbind,extr_list))
+elapsed <- Sys.time() - start
+elapsed
 ```
