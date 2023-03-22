@@ -454,7 +454,7 @@ raster. This data is an estimate of the day of year that seasonal
 snowpack finally melted in spring.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">snow_2020</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sdp_get_raster.html">sdp_get_raster</a></span><span class="op">(</span><span class="st">"R4D001"</span>,years<span class="op">=</span><span class="fl">2020</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Returning dataset with 1 layers be patient..."</span></span>
+<span><span class="co">#&gt; [1] "Returning yearly dataset with 1 layers..."</span></span>
 <span><span class="va">snow_crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/terra/man/crop.html" class="external-link">crop</a></span><span class="op">(</span><span class="va">snow_2020</span>,<span class="va">sites_proj</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">snow_crop</span><span class="op">)</span></span></code></pre></div>
 <p><img src="wrangle-raster-data_files/figure-html/load%20snow-1.png" width="700"></p>

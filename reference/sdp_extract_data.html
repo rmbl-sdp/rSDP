@@ -109,15 +109,15 @@
 
 
 <dt>return_type</dt>
-<dd><p>character. Class of the output. If <code>return_type = 'SpatVector'</code>, retains geometry (as class <code><a href="https://rdrr.io/pkg/terra/man/SpatVector-class.html" class="external-link">terra::SpatVector</a></code>). If <code>return_type = 'SpatVector'</code> then also retains geometry as a Simple Features object (class <code><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">sf::sf</a></code>). If <code>return_type = 'DataFrame'</code> returns an ordinary data frame.</p></dd>
+<dd><p>character. Class of the output. If <code>return_type = 'SpatVector'</code>, retains geometry (as class <code><a href="https://rdrr.io/pkg/terra/man/SpatVector-class.html" class="external-link">terra::SpatVector</a></code>). If <code>return_type = 'sf'</code> then also retains geometry as a Simple Features object (class <code><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">sf::sf</a></code>). If <code>return_type = 'DataFrame'</code> returns an ordinary data frame.</p></dd>
 
 
 <dt>method</dt>
-<dd><p>Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells. Ignored if <code>locations</code> represent lines or points.</p></dd>
+<dd><p>Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells. Ignored if <code>locations</code> represent lines or polygons.</p></dd>
 
 
 <dt>sum_fun</dt>
-<dd><p>character or function. Function to use to summarize raster cells that overlap input features. Ignored if extracting by point.</p></dd>
+<dd><p>character or function. Function to use to summarize raster cells that overlap input features. Ignored if extracting by point. If <code>NULL</code>, and locations represent lines or polygons, the function returns all cell values.</p></dd>
 
 
 <dt>verbose</dt>
