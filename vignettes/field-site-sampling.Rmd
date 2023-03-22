@@ -14,26 +14,154 @@ knitr::opts_chunk$set(
 )
 ```
 
-*by [Ian Breckheimer](ikb@rmbl.org), updated 15 March 2023.*
+*by [Ian Breckheimer](ikb@rmbl.org), updated 21 March 2023.*
 
-Data products generated as part of the RMBL Spatial Data Platform are meant to provide important environmental context for measurements collected in the field. Taking advantage of this requires us to extract the values of data products at the locations of field sites and generate appropriate summaries.
+Data products generated as part of the RMBL Spatial Data Platform are meant to provide important environmental context for measurements collected in the field. Taking advantage of this requires us to extract the values of data products at or near the locations of field sites and generate appropriate summaries.
 
-For example, if we want to understand
+This is not always as simple as it might seem. For example, if we want to understand how the persistence of spring snowpack affects the abundance or emergence timing of pollinators, we might want to gather information about patterns of snow persistence at the exact locations of our field sites, but also in the nearby landscape, since pollinators such as bees and butterflies can move distances of several hundred meters while foraging.
+
+So in this example, which measure of snow persistence is most relevant? Is it the mean timing within, say, 200 m that matters most, or is it the earliest (minimum) value since bees often nest on steep south-facing slopes that melt early? This is where we need to use a combination of data and intuition to guide us. The functions in the `rSDP` R package are designed to allow us to easily extract data at multiple scales and generate multiple summaries so we can let the science rather than the logistical limitations of field measurement guide our work.
+
+But before we get there, we need get field site data into the `R` environment and prepare it for extraction.
+
+#### Setting up the environment.
+
+If you haven't already, you will first need to install the relevant packages and load them into the working environment.
+
+```{r install, eval = FALSE}
+remotes::install_github("rmbl-sdp/rSDP")
+remotes::install_github("rstudio/leaflet")
+install.packages(c("terra","tidyterra","sf"),type="binary") ## `binary` install prevents dependency issues on Mac and Windows
+```
+
+```{r workspace,message=FALSE,warning=FALSE}
+library(sf)
+library(terra)
+library(leaflet)
+library(rSDP)
+```
 
 ## Reading in spatial data on field sites.
 
+Most `R` users are familiar with `Data Frames`, the basic data structure for tabular, spreadsheet-style data. `Data Frames` work great for many datasets, but to work with spatial data, we need to link this tabular information to objects that describe the geometry of each geographic feature such as a study site or sampling area. There are a few different ways to do this:
+
 #### Tabular data with coordinates
+
+In the simplest case, the locations of field sites can be read in along with other site data as a set of spatial coordinates. This is simplest with point data, where the location of each site can be described with two numbers that represent the X and Y coordinates of the site (latitude and longitude, for example).
+
+Here we read in a simple `Data Frame` that contains coordinates:
+
+```{r read df}
+sites_xy <- read.csv("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.csv")
+head(sites_xy)
+```
+
+In this case, the `X` and `Y` fields represent decimal degrees of latitude and longitude. We can let `R` 'know` that these are the coordinates this way:
+
+```{r coords xy}
+sites_sf <- st_as_sf(sites_xy,coords=c("X","Y"))
+head(sites_sf)
+```
+
+The above code creates a new object that still has the tabular data in the original file, but has a new column `geometry` to hold the spatial coordinates. Technically, this data is now a "Simple Feature Collection". For more information on Simple Features, check out the article "Wrangling Spatial Data".
+
+We are almost in business! There is one missing piece, however. When we create spatial objects this way, we also need to assign a Coordinate Reference System. Basically, we need to let `R` know that these coordinates represent latitudes and longitudes and not some other system of referencing coordinates. We do this by assigning an [EPSG Code](https://epsg.io/) to the dataset. There are thousands of different coordinate reference systems out there, so the codes are a shorthand to uniquely assign a coordinate system.
+
+```{r coords ref}
+st_crs(sites_sf) <- "EPSG:4326"
+sites_sf
+```
+
+The summary no longer says `CRS: NA` but instead reads `Geodetic CRS: WGS 84`. This tells us that we have successfully assigned a coordinate system to the data!
+
+How do we make sure we have assigned the correct one (e.g. the right EPSG Code)? The simplest way is to plot the data on a web map.
+
+```{r coords_web,out.width="100%"}
+plet(vect(sites_sf),tiles="Streets",col="red")
+```
+Since I know that these points represent sites close to Rocky Mountain Biological Lab in Gothic, CO. I can be pretty sure that I've assigned the correct coordinate system.
+
+What if you don't know the EPSG code that corresponds to the coordinates in your dataset? You can look up the code on the handy website [epsg.io](https://epsg.io/).
 
 #### GeoJSON and GeoPackage files
 
-#### Shapefiles
+Reading coordinates in .csv text files works great with point data, but becomes cumbersome when we've got data with more complicated geometries such as lines and polygons. In these cases we will usually want to read data in a format that is explicitly designed for spatial information. There are two open data formats that are in most widespread use:
 
-#### Web services
+* geoJSON, an open plain-text data [format](https://en.wikipedia.org/wiki/GeoJSON) that works really well for small to medium-sized datasets (up to a few hundred MB).
+* GeoPackage, an open geospatial database [format](https://www.geopackage.org/) based on SQLITE that can efficiently store larger and more complex datasets than geoJSON, including related tables and layers with multiple geometry types.
 
+Both formats can be read into `R` using the `st_read()` function in the `sf` package:
+
+```{r sites vector}
+sites_gj <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.geojson")
+```
+Since we are reading a geospatial format that already has spatial reference information, we don't need to assign an EPSG code.
+
+Similarly, for a GeoPackage:
+
+```{r sites geopackage}
+sites_gp <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.gpkg")
+```
+
+Although these examples are reading data directly from a web source, the function works just as well on local files by substituting in the path to the file.
+
+#### ESRI Shapefiles
+
+Shapefiles are a file format commonly used by the GIS software suite ArcGIS. Although they have some important limitations, they are still a common way to share geographic data. These files can also be read into R using `st_read()`. 
+
+Because shapefiles are actually a collection of related files, we need to download them locally first before loading.
+
+```{r sites shapefile}
+## Downloads files to a temporary directory.
+URL <- "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/rSDP_example_points_latlon.shp.zip"
+cur_tempfile <- tempfile()
+download.file(url = URL, destfile = cur_tempfile)
+out_directory <- tempfile()
+unzip(cur_tempfile, exdir = out_directory)
+
+## Loads into R.
+sites_shp <- st_read(dsn = out_directory)
+```
 
 ## Finding and loading SDP data products
 
+The rSDP package is designed to simply data access for a catalog of curated spatial data products. You can access the catalog like this:
+
+```{r sdp cat}
+cat <- sdp_get_catalog()
+```
+
+Running the function with default arguments returns the entire catalog, but you can also subset by spatial domain, product type, or data release.
+```{r sdp cat2}
+cat_snow <- sdp_get_catalog(types=c("Snow"),releases=c("Release4"))
+cat_snow[,1:6]
+```
+
 #### Single layer data
+
+Some datasets in the catalog represent data for a only a single period of time or are summaries of time-series datasets. For example, if we want to return the single-layer snow data, we can do it like this:
+
+```{r cat 3}
+cat_snow_single <- sdp_get_catalog(types=c("Snow"),releases=c("Release4"),timeseries_type="Single")
+cat_snow_single[,1:6]
+```
+
+Once we've identified the product of interest, we can load it into R using `sdp_get_raster()`:
+
+```{r single snow}
+snow_duration_mean <- sdp_get_raster(catalog_id="R4D057")
+snow_duration_mean
+```
+
+We can confirm this is a single layer dataset by checking the number of layers using the `nlyr()` function in `terra`:
+
+```{r snow nlyr}
+nlyr(snow_duration_mean)
+```
+We can also plot this dataset on a web map:
+```{r plet snow}
+plet(snow_duration_mean,tiles="Streets")
+```
 
 #### Raster time-series
 

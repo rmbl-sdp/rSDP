@@ -13,7 +13,7 @@ sdp_extract_data(
   catalog_id = NULL,
   url_template = NULL,
   bind = TRUE,
-  return_spatvector = TRUE,
+  return_type = "SpatVector",
   method = "bilinear",
   sum_fun = "mean",
   verbose = TRUE,
@@ -35,9 +35,9 @@ sdp_extract_data(
 
 \item{url_template}{character. Alternative method of specifying whic dataset to sample. NOT IMPLEMENTED YET.}
 
-\item{bind}{logical. Should the extracted data be bound to the inputs? If not, a data frame is returned with the ID field in common with input data.}
+\item{bind}{logical. Should the extracted data be bound to the inputs? If not, a dataset is returned with the ID field in common with input data.}
 
-\item{return_spatvector}{logical. Should the returned dataset be a vector dataset with retained geometry (class \code{terra::SpatVector}). If \code{FALSE} returns an ordinary data frame.}
+\item{return_type}{character. Class of the output. If \code{return_type = 'SpatVector'}, retains geometry (as class \code{terra::SpatVector}). If \code{return_type = 'SpatVector'} then also retains geometry as a Simple Features object (class \code{sf::sf}). If \code{return_type = 'DataFrame'} returns an ordinary data frame.}
 
 \item{method}{Method for extracting values ("simple" or "bilinear"). With "simple" values for the cell a point falls in are returned. With "bilinear" the returned values are interpolated from the values of the four nearest raster cells. Ignored if \code{locations} represent lines or points.}
 
@@ -69,6 +69,8 @@ sdp_extr_sv <- sdp_extract_data(sdp_rast,location_sv,return_spatvector=TRUE)
 sdp_extr_sv
 
 ## Can also return a data frame.
-sdp_extr_df <- sdp_extract_data(sdp_rast,location_sv,return_spatvector=TRUE)
+sdp_extr_df <- sdp_extract_data(sdp_rast,location_sv,return_spatvector=FALSE)
 sdp_extr_df
+
+
 }

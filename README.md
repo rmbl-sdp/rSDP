@@ -282,8 +282,8 @@ timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Loo
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
 #>                        approach        timing
-#> 1                   Single Call 19.70793 secs
-#> 2    Looping sdp_extract_data() 29.18842 secs
-#> 3 Looping over sdp_get_raster() 28.99906 secs
-#> 4                       Foreach 32.57772 secs
+#> 1                   Single Call 22.84320 secs
+#> 2    Looping sdp_extract_data() 36.86560 secs
+#> 3 Looping over sdp_get_raster() 34.61781 secs
+#> 4                       Foreach 27.65680 secs
 ```

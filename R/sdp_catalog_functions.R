@@ -82,7 +82,7 @@ sdp_get_metadata <- function(catalog_id,return_list=TRUE){
   cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))
   meta_url <- cat[cat$CatalogID==catalog_id,]$Metadata.URL
 
-  metadata_xml <- xml2::read_xml(meta_url)
+  metadata_xml <- xml2::read_xml(meta_url,timeout=200)
 
   if(return_list){
     metadata_list <- xml2::as_list(metadata_xml)

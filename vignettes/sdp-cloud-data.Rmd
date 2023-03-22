@@ -29,9 +29,9 @@ Loading the libraries makes the functions available.
 ```{r libraries, warning=FALSE, message=FALSE}
 library(rSDP)
 library(terra)
-library(sf)
 library(leaflet)
 library(tidyterra)
+library(sf)
 ```
 
 ## Finding datasets
@@ -88,9 +88,9 @@ print(snow_meta$qgis$extent$spatial)
 We currently provide SDP data products in three different spatial domains. To visualize the boundaries of these domains, we can construct a web map that shows them. First we need to connect to these datasets stored in the cloud.
 
 ```{r connect domains, message=FALSE, warning=FALSE}
-GT_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/GT_region_vect_1m.geojson")
-UER_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UER_region_vect_1m.geojson")
-UG_bound <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UG_region_vect_1m.geojson")
+GT_bound <- sf::st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/GT_region_vect_1m.geojson")
+UER_bound <- sf::st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UER_region_vect_1m.geojson")
+UG_bound <- sf::st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UG_region_vect_1m.geojson")
 domain_bounds <- rbind(UG_bound,UER_bound,GT_bound)
 domain_bounds$Domain <- c("Upper Gunnison (UG)","Upper East River (UER)","Gothic Townsite (GT)")
 ```
@@ -98,8 +98,8 @@ domain_bounds$Domain <- c("Upper Gunnison (UG)","Upper East River (UER)","Gothic
 Once we've got them in, we can use the `terra::plet()` function to plot the domains on a web map.
 
 ```{r plot domains,out.width="100%"}
-domain_sv <- vect(domain_bounds)
-plet(domain_sv,"Domain",tiles="Esri.NatGeoWorldMap",alpha=0.6,
+domain_sv <- terra::vect(domain_bounds)
+terra::plet(domain_sv,"Domain",tiles="Esri.NatGeoWorldMap",alpha=0.6,
      main="SDP Spatial Domains",
      col=c("#6c42f5","#c95773","#59c957"))
 ```

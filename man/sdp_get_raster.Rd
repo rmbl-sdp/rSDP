@@ -8,6 +8,7 @@ sdp_get_raster(
   catalog_id = NULL,
   url = NULL,
   years = NULL,
+  months = NULL,
   date_start = NULL,
   date_end = NULL,
   verbose = TRUE,
@@ -23,6 +24,8 @@ sdp_get_raster(
 \item{url}{character. A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either \code{catalog_id} or \code{url}, but not both.}
 
 \item{years}{numeric. For annual time-series data, a numeric vector specifying which years to return. The default \code{NULL} returns all available years.}
+
+\item{months}{numeric. For monthly time-series data, a numeric vector specifying which months of data to return. The default \code{NULL} returns all available months.}
 
 \item{date_start}{class \code{Date}. For daily time-series data, the first day of data to return.}
 
