@@ -26,8 +26,8 @@ You can install the latest version of rSDP from
 [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("rmbl-sdp/rSDP")
+# install.packages("remotes")
+remotes::install_github("rmbl-sdp/rSDP")
 ```
 
 ## Discovering SDP Data and Metadata
@@ -174,7 +174,7 @@ year.
 ``` r
 ## Connects to rasters from a temporal subset of daily data.
 tmax <- sdp_get_raster("R4D004",date_start=as.Date("2011-12-01"),date_end=as.Date("2011-12-30"))
-#> [1] "Returning dataset with 30 layers, be patient..."
+#> [1] "Returning daily dataset with 30 layers..."
 
 ## Further subsets when extracting data
 tmax_sample <- sdp_extract_data(tmax,location_sv,date_start=as.Date("2011-12-01"),date_end=as.Date("2011-12-20"))
@@ -198,7 +198,7 @@ legend("bottomright", legend=sites,col=c(1,3,4),bty="n",lty=1)
 
 ##Retrieving rasters from a subset of years.
 snow_yearly <- sdp_get_raster("R4D001",years=c(2012,2019))
-#> [1] "Returning dataset with 2 layers be patient..."
+#> [1] "Returning yearly dataset with 2 layers..."
 terra::plot(snow_yearly,range=c(60,230))
 ```
 
@@ -214,7 +214,7 @@ raster object with many (sometimes hundreds) of layers.
 ## Extracts with a single call.
 start1 <- Sys.time()
 tmax1 <- sdp_get_raster("R4D004",date_start=as.Date("2004-10-01"),date_end=as.Date("2004-10-31"))
-#> [1] "Returning dataset with 31 layers, be patient..."
+#> [1] "Returning daily dataset with 31 layers..."
 
 tmax_extr1 <- sdp_extract_data(tmax1,location_sv,verbose=FALSE)
 elapsed1 <- Sys.time() - start1
@@ -248,14 +248,10 @@ elapsed3 <- Sys.time() - start3
 
 ## Parallel extraction via foreach.
 library(foreach)
-#> Warning: package 'foreach' was built under R version 4.1.2
 library(doParallel)
-#> Warning: package 'doParallel' was built under R version 4.1.2
 #> Loading required package: iterators
-#> Warning: package 'iterators' was built under R version 4.1.2
 #> Loading required package: parallel
 library(sf)
-#> Warning: package 'sf' was built under R version 4.1.2
 #> Linking to GEOS 3.10.2, GDAL 3.4.2, PROJ 8.2.1; sf_use_s2() is TRUE
 
 ## Can't pass SpatVector or SpatRaster objects via Foreach, so convert to sf.
@@ -267,11 +263,12 @@ doParallel::registerDoParallel(cl)
 days <- seq(as.Date("2007-10-01"),as.Date("2007-10-31"),by="day")
 
 extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("sf","terra","rSDP")) %dopar% {
-  #devtools::load_all() ## During package development.
-  tmax4 <- rSDP::sdp_get_raster("R4D004",date_start=days[i],date_end=days[i],verbose=FALSE)
-   extr_dat <- rSDP::sdp_extract_data(tmax4,vect(locations_sf),verbose=FALSE,
-                                      return_spatvector=FALSE)[,3]
-   (extr_dat)
+  tmax4 <- sdp_get_raster("R4D007",date_start=days[i],
+                         date_end=days[i],verbose=FALSE)
+   locations_sv <- vect(locations_sf)
+   extr_dat <- sdp_extract_data(tmax4,locations=locations_sv,
+                                verbose=FALSE,return_type="sf")[,4]
+   (st_drop_geometry(extr_dat))
 }
 parallel::stopCluster(cl)
 tmax_extr4 <- do.call(cbind,extr_list4)
@@ -282,8 +279,8 @@ timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Loo
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
 #>                        approach        timing
-#> 1                   Single Call 22.84320 secs
-#> 2    Looping sdp_extract_data() 36.86560 secs
-#> 3 Looping over sdp_get_raster() 34.61781 secs
-#> 4                       Foreach 27.65680 secs
+#> 1                   Single Call 20.02838 secs
+#> 2    Looping sdp_extract_data() 31.41766 secs
+#> 3 Looping over sdp_get_raster() 32.16505 secs
+#> 4                       Foreach 21.30112 secs
 ```

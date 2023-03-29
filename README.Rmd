@@ -28,8 +28,8 @@ SDP data products are provided as geospatial raster datasets in [cloud-optimized
 You can install the latest version of rSDP from [GitHub](https://github.com/) with:
 
 ```{r install, eval=FALSE}
-# install.packages("devtools")
-devtools::install_github("rmbl-sdp/rSDP")
+# install.packages("remotes")
+remotes::install_github("rmbl-sdp/rSDP")
 ```
 
 ## Discovering SDP Data and Metadata
@@ -147,7 +147,7 @@ terra::plot(snow_yearly,range=c(60,230))
 
 For extracting subsets of large datasets, it's sometimes a good idea to loop over small subsets rather than extracting from a single large raster object with many (sometimes hundreds) of layers.
 
-```{r example8}
+```{r example8, warning=FALSE}
 ## Extracts with a single call.
 start1 <- Sys.time()
 tmax1 <- sdp_get_raster("R4D004",date_start=as.Date("2004-10-01"),date_end=as.Date("2004-10-31"))
@@ -196,11 +196,12 @@ doParallel::registerDoParallel(cl)
 days <- seq(as.Date("2007-10-01"),as.Date("2007-10-31"),by="day")
 
 extr_list4 <- foreach::foreach(i=1:length(days),.packages=c("sf","terra","rSDP")) %dopar% {
-  #devtools::load_all() ## During package development.
-  tmax4 <- rSDP::sdp_get_raster("R4D004",date_start=days[i],date_end=days[i],verbose=FALSE)
-   extr_dat <- rSDP::sdp_extract_data(tmax4,vect(locations_sf),verbose=FALSE,
-                                      return_spatvector=FALSE)[,3]
-   (extr_dat)
+  tmax4 <- sdp_get_raster("R4D007",date_start=days[i],
+                         date_end=days[i],verbose=FALSE)
+   locations_sv <- vect(locations_sf)
+   extr_dat <- sdp_extract_data(tmax4,locations=locations_sv,
+                                verbose=FALSE,return_type="sf")[,4]
+   (st_drop_geometry(extr_dat))
 }
 parallel::stopCluster(cl)
 tmax_extr4 <- do.call(cbind,extr_list4)

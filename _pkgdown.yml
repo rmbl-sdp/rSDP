@@ -4,3 +4,29 @@ template:
   bootswatch: united
   theme: breeze-light
 
+navbar:
+ components:
+   articles:
+    text: Resources
+    menu:
+    - text: Tutorials
+    - text: Connecting to SDP Datasets
+      href: articles/sdp-cloud-data.html
+    - text: Extracting SDP Data Field Sites
+      href: articles/field-site-sampling.html
+    - text: Creating Figures from Raster Data
+      href: articles/pretty-maps.html
+    - text: Wrangling Spatial Datasets
+      href: articles/wrangle-raster-data.html
+    - text: -------
+    - text: "SDP Dataset Catalog"
+    - text: All SDP Datasets
+      href: https://www.rmbl.org/scientists/resources/data-catalog/?tag-id=84
+    - text: Release One
+      href: https://www.rmbl.org/scientists/resources/data-catalog/?tag-id=326
+    - text: Release Two
+      href: https://www.rmbl.org/scientists/resources/data-catalog/?tag-id=327
+    - text: Release Three
+      href: https://www.rmbl.org/scientists/resources/data-catalog/?tag-id=328
+    - text: Release Four
+      href: https://www.rmbl.org/scientists/resources/data-catalog/?tag-id=325

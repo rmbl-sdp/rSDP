@@ -570,4 +570,4 @@ ggplot(tmax_extr_long)+
   theme_bw()
 
 ```
-These sites are all within a few kilometers of each other so differences in microclimate are mostly due to vegetation structure and solar radiation.
+These sites are all within a few hundred meters of each other so differences in microclimate are mostly due to vegetation structure and solar radiation.
