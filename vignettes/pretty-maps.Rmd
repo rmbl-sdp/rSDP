@@ -14,21 +14,32 @@ knitr::opts_chunk$set(
 )
 ```
 
+Plotting and exploring geospatial data in R is a bit of a mixed bag. It's not my platform of choice for exploring geographic data (a desktop GIS like QGIS is usually better for this task), but it's possible to generate high quality scientific figures in R from geospatial datasets (including raster data). Generating figures in R has numerous benefits, the largest of which is probably reproducibility: if something changes about your data or analysis, it's easy to recreate the figure.
+
+The ecosystem of packages and tools for making data visualizations is really large, and it can be tough to figure out how to get started. This article reviews a few different ways to plot raster and vector data in R.
+
 ## Workspace setup
 
+First we need to install and load some packages. In addition to the packages required by rSDP, we will need to install a few others as well.
+
 ```{r prettymaps setup, message=FALSE, warning=FALSE}
+#install.packages(c("tidyterra","ggspatial","ggplot2","gridExtra))
+#remotes::install_github("rmbl-sdp/rSDP")
+#remotes::install_github("rstudio/leaflet")
+
 library(sf)
 library(terra)
 library(leaflet)
 library(tidyterra)
 library(ggspatial)
-library(ggsn)
 library(ggplot2)
 library(gridExtra)
 library(rSDP)
 ```
 
 ## Finding SDP data
+
+First, we will use the functions in the rSDP package to locate and download some raster data. For more information on finding and connecting to datasets, check out the tutorial "Accessing Cloud-based Datasets".
 
 ```{r find data}
 snow_cat <- sdp_get_catalog(domains="UG",types="Snow",releases="Release4")
@@ -44,6 +55,8 @@ roads <- st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supp
 ```
 ## Formatting data
 
+Once we've got data loaded, we need to do a few things to clean it up and get it in the right format for plotting:
+
 ```{r format data}
 ##Pulls out major roads.
 roads_major <- filter(roads,highway %in% c("secondary","trunk"))
@@ -57,7 +70,26 @@ roads_proj <- project(roads_sv,crs(snow_rast))
 
 ## Basic raster maps with `terra::plot()`
 
-```{r terra plot}
+The fastest way to plot a raster dataset in R is with the built-in `plot` method for `SpatRaster` datasets in the terra package. This can be as simple as:
+
+```{r terra plot simple}
+plot(snow_rast)
+```
+
+This generates plots of all of the layers in the raster dataset. In this case, the plots represent snowpack persistence for four years, 2018 to 2021. You will notice that the color ramp visualizing the data is different for each layer. This might not be ideal if the layers all share the same numeric scale. We can standardize the scales of the color ramp across layers by specifying the `range` argument:
+
+```{r terra range}
+plot(snow_rast,range=c(50,220))
+```
+The default color ramp is only one possibility for visualization. The color scales in the `viridis` package are particularly useful, because they are color-blind friendly and have other nice properties.
+
+```{r terra viridis, warn=FALSE}
+library(viridis)
+plot(snow_rast,range=c(30,220),col=viridis::cividis(n=255))
+```
+You can define your own custom color ramp with a call to `colorRampPallette()`. This creates a color generator function which you can use to create arbitrary number of colors along a gradient. In the example below, we define the `jet_colors()` function and then pass it along as the `col` argument in `plot`, this creates a color scale with 255 values.
+
+```{r terra plot ramp}
 jet_colors <-
   colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
                      "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -68,13 +100,35 @@ plot(snow_rast[[1]],range=c(25,220),nc=3,
 plot(roads_proj,add=TRUE,col="grey20")
 ```
 
+In specifying the color ramp, we are using a mixture of named colors (e.g. `"yellow"`), along with 6-digit alphanumeric codes starting with a `#`. The codes are "hex colors", which is a widely used color coding system. To look up the hex code for any color and generate custom color ramps with hex codes, check out the [scale]{https://hihayk.github.io/scale/} web resource.
+
+Here's a color-blind friendly custom color ramp:
+
+```{r terra plot ramp2}
+earth_colors <-
+  colorRampPalette(c("#001344", "#002E68", "#095186", 
+                     "#19769F","#2F9AB1", "#47C7B8", 
+                     "#63D9A9", "#82E7A1","#A5F3A5",
+                     "#D8FACC", "#FAFFF5"))
+
+plot(snow_rast[[1]],range=c(25,220),nc=3,
+     col=earth_colors(255),
+     main="Snow Persistence (Day of Year)")
+plot(roads_proj,add=TRUE,col="grey20")
+```
+
 ## Web maps with leaflet
 
+It's sometimes useful to plot raster datasets on a web map that enables interactive exploration and overlays data on an informative basemap. The `terra::plet()` function achieves this:
+
 ```{r terra plet,out.width="100%"}
-map <- terra::plet(snow_rast[[1]],tiles="Streets",col=jet_colors(255))
+map <- terra::plet(snow_rast[[1]],tiles="Streets",col=rev(earth_colors(255)))
 lines(map,roads_proj,col="white")
 ```
+
 ## Prettier maps with tidyterra and ggplot2
+
+The base functions in `terra` for plotting maps are flexible and fast, but it can often take quite a bit of coding and customization to achieve a publication-quality result. An alternative option is to use functions in the `tidyterra` package to integrate raster and vector datasets into the widely used `ggplot2` plotting system. Integrating scale bar and north arrow functions from the `ggspatial` package can achieve publication-quality visualizations without a large amount of customization:
 
 ```{r tidyterra basic, out.width="6in"}
 ## Simple one-panel map.
@@ -91,16 +145,21 @@ map0 <- ggplot()+
 ## Adding a scale bar and north arrow.
 map0 + 
   annotation_scale(location="br", height=unit(0.2,"cm"))+
-  annotation_north_arrow(location="bl", height=unit(1,"cm"))
+  annotation_north_arrow(location="bl", height=unit(1,"cm"),
+                         width=unit(1,"cm"))
 ```
+
+Just like with other plot types that use `ggplot`, you can change the extent of the plot by specifying scale limits:
 
 ```{r map zoom, warning=FALSE, message=FALSE}
 ## Zooming in.
-map0 + scale_x_continuous(limits=c(327306.007419024, 342195.337294167),expand=c(0,0))+
-       scale_y_continuous(limits=c(4289070.14096146, 4307572.32293866),expand=c(0,0))
+map0 + scale_x_continuous(limits=c(327306, 342195),expand=c(0,0))+
+       scale_y_continuous(limits=c(4289070, 4307572),expand=c(0,0))
 ```
 
 ## Faceting for multi-panel maps
+
+One of the most powerful features of `ggplot()` is the ability to display multiple subsets of data as *small multiples*, repeated plots with common scales and other visual elements. These are called *facets* in the `ggplot` syntax. In the example below, adding `facet_wrap(facets=~lyr)` to a basic plot produces a multi-panel plot with each layer in the `SpatRaster` plotted as a separate panel with a common color scale:
 
 ### Simple faceted map
 ```{r tidyterra facets}
@@ -111,8 +170,28 @@ map1 <- ggplot()+
 map1
 ```
 
+### Color ramps with `tidyterra` and `viridis`
+
+The `tidyterra` package comes with a few useful color ramps, including the [Wikimedia scales for topographic data](https://en.wikipedia.org/wiki/Wikipedia:WikiProject_Maps/Conventions/Topographic_maps) (see the `scale_fill_wiki_*` and `scale_color_wiki_*` functions), as well as the more general [Whitebox color ramps](https://github.com/jblindsay/whitebox-tools). You can also use all of the great scales in the `viridis` package:
+
+```{r tidyterra facets}
+map1 <- ggplot()+
+  geom_spatraster(data=snow_rast[[1:3]])+
+  facet_wrap(facets=~lyr)+
+  scale_fill_viridis("Snow \nPersistence \n(DOY)",option="mako")+
+  theme_minimal()
+map1
+```
+
 ### Full faceted map with scalebar
-```{r full}
+
+With a bit of extra wrangling, you can get a publication quality multi-panel map with,`ggplot2`, `tidyterra`, and `ggspatial`. In the code below, we create two tables of parameters which specify the details of the scale bar and north arrow and in which panels where they appear.
+
+```{r full,message=FALSE}
+
+# Study area boundary (simplified for fast display).
+UG_bound <- sf::st_read("https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/supplemental/UG_region_vect_1m.geojson")
+UG_simple <- sf::st_simplify(UG_bound,dTolerance=100)
 
 # North Arrow and Scale Bar properties.
 arrow_params <- tibble::tibble(
@@ -122,45 +201,58 @@ arrow_params <- tibble::tibble(
 scale_params <- tibble::tibble(
   lyr = "2018",
   location= "br",
-  width_hint=0.2)
+  width_hint=0.3,
+  line_col="white",
+  text_col="white")
 
 # Full Map
 map2 <- ggplot()+
-  geom_spatraster(data=snow_rast[[1:3]],maxcell=5e+04)+
-  geom_spatvector(aes(color="highway"),data=roads_sv)+
+  geom_spatraster(data=snow_rast[[1:3]],maxcell=5e+05)+
+  geom_spatvector(aes(color="Study Area"),data=UG_simple,
+                  fill=rgb(0,0,0,0),lwd=0.5)+
   labs(title="Spring Snow Persistence",tag="(a)")+
-  scale_fill_whitebox_c("Day of Year",palette="muted",direction=1,limits=c(20,220))+
-  scale_color_manual("",values=c("grey40"))+
+  scale_fill_viridis("Day of Year",option="mako",limits=c(20,220))+
+  scale_color_manual("",values=c("grey90"))+
   scale_x_continuous(expand=c(0,0),breaks=c(-107,-106.4))+
   scale_y_continuous(expand=c(0,0),breaks=c(38.5,38.7,38.9))+
   annotation_north_arrow(aes(location=location),
-                         style=north_arrow_minimal(),
+                         style=north_arrow_minimal(fill="white",
+                                                   line_col="white",
+                                                   text_col="white"),
                          which_north="true",
+                         height=unit(0.35,"in"),
                          data=arrow_params)+
   annotation_scale(aes(location=location,
-                   width_hint=width_hint),
+                   width_hint=width_hint,
+                   line_col=line_col,
+                   text_col=text_col),
                    style="ticks",
                    data=scale_params)+
   facet_wrap(~lyr,ncol=4)+
   theme_minimal()+
   theme(axis.text.x=element_text(size=10),
-        axis.text.y=element_text(size=10))
+        axis.text.y=element_text(size=10),
+        legend.position="bottom")
 print(map2)
 ```
 ## Exporting maps
 
+To export figures from R so we can add them to documents or further edit them in a drawing program, we need to export them to an external file. The two best formats for this are PNG, which is an efficient raster graphics format, and PDF, which is a largely vector format, but can also include embedded images. To get sharp PNG output, we usually want to specify a resolution of at least 300 points per inch using the `res` argument.
+
 ### PNG Export
 ```{r export png}
 png("~/Downloads/snow_3panel_tidyterra.png",
-    width=800,height=450,units="px")
+    width=8,height=4,units="in",res=300)
 map2
 dev.off()
 ```
 
+The vector portions of a PDF plot will always look sharp in the resulting file, and the resolution of the raster visualization is set by the `maxcell` argument to `geom_spatraster` when we created the map above.
+
 ### PDF Export
 ```{r export}
 pdf("~/Downloads/snow_3panel_tidyterra.pdf",
-    width=8,height=4.5)
+    width=8,height=4)
 map2
 dev.off()
 ```

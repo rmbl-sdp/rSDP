@@ -88,6 +88,22 @@ Alternatively, you can plot these data on a web map:
 terra::plet(dem,tiles="Esri.WorldImagery")
 ```
 
+## Downloading SDP data locally.
+
+By default, `sdp_get_raster()` connects to cloud-based datasets without
+downloading them locally, but specifying `download_file=TRUE` and
+providing a local file path will download the raster data to disk. This
+can sometimes speed up operations that would be prohibitively slow with
+cloud-based data sources:
+
+``` r
+## Creates a local `SpatRaster`
+dem_local <- sdp_get_raster(catalog_id="R3D009",
+                            download_data=TRUE,
+                            download_path="~/Downloads", 
+                            overwrite=FALSE)
+```
+
 ## Extracting samples of SDP data.
 
 The function `sdp_extract_data()` extracts samples from datasets at
@@ -279,8 +295,8 @@ timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Loo
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
 #>                        approach        timing
-#> 1                   Single Call 20.02838 secs
-#> 2    Looping sdp_extract_data() 31.41766 secs
-#> 3 Looping over sdp_get_raster() 32.16505 secs
-#> 4                       Foreach 21.30112 secs
+#> 1                   Single Call 20.43772 secs
+#> 2    Looping sdp_extract_data() 32.68482 secs
+#> 3 Looping over sdp_get_raster() 32.89033 secs
+#> 4                       Foreach 36.05433 secs
 ```

@@ -69,7 +69,17 @@ Alternatively, you can plot these data on a web map:
 ```{r example plet, eval=FALSE}
 terra::plet(dem,tiles="Esri.WorldImagery")
 ```
+## Downloading SDP data locally.
 
+By default, `sdp_get_raster()` connects to cloud-based datasets without downloading them locally, but specifying `download_file=TRUE` and providing a local file path will download the raster data to disk. This can sometimes speed up operations that would be prohibitively slow with cloud-based data sources:
+
+```{r example3b, eval=FALSE}
+## Creates a local `SpatRaster`
+dem_local <- sdp_get_raster(catalog_id="R3D009",
+                            download_data=TRUE,
+                            download_path="~/Downloads", 
+                            overwrite=FALSE)
+```
 
 ## Extracting samples of SDP data.
 
