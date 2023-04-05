@@ -174,7 +174,7 @@ map1
 
 The `tidyterra` package comes with a few useful color ramps, including the [Wikimedia scales for topographic data](https://en.wikipedia.org/wiki/Wikipedia:WikiProject_Maps/Conventions/Topographic_maps) (see the `scale_fill_wiki_*` and `scale_color_wiki_*` functions), as well as the more general [Whitebox color ramps](https://github.com/jblindsay/whitebox-tools). You can also use all of the great scales in the `viridis` package:
 
-```{r tidyterra facets}
+```{r tidyterra facets2}
 map1 <- ggplot()+
   geom_spatraster(data=snow_rast[[1:3]])+
   facet_wrap(facets=~lyr)+
