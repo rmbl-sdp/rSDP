@@ -51,8 +51,8 @@ sdp_get_catalog <- function(domains=c("UG","UER","GT"),
 
   #catalog <- rSDP:::catalog
   catalog <- get0("SDP_catalog", envir = asNamespace("rSDP"))
-  catalog$MinDate <- as.Date(catalog$MinDate,format="%m/%d/%y")
-  catalog$MaxDate <- as.Date(catalog$MaxDate,format="%m/%d/%y")
+  catalog$MinDate <- as.Date(catalog$MinDate,format="%m/%d/%Y")
+  catalog$MaxDate <- as.Date(catalog$MaxDate,format="%m/%d/%Y")
   cat_filt <- catalog[catalog$Domain %in% domains & catalog$Type %in% types &
                   catalog$Release %in% releases & catalog$Deprecated %in% deprecated &
                   catalog$TimeSeriesType %in% timeseries_types,]
