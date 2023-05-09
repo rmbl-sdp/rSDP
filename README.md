@@ -30,6 +30,13 @@ You can install the latest version of rSDP from
 remotes::install_github("rmbl-sdp/rSDP")
 ```
 
+Installing the development version of the `leaflet` package is currently
+required for web maps.
+
+``` r
+remotes::install_github("rstudio/leaflet")
+```
+
 ## Discovering SDP Data and Metadata
 
 The package provides functions `sdp_get_catalog()`, and
@@ -91,7 +98,7 @@ terra::plet(dem,tiles="Esri.WorldImagery")
 ## Downloading SDP data locally.
 
 By default, `sdp_get_raster()` connects to cloud-based datasets without
-downloading them locally, but specifying `download_file=TRUE` and
+downloading them locally, but specifying `download_files=TRUE` and
 providing a local file path will download the raster data to disk. This
 can sometimes speed up operations that would be prohibitively slow with
 cloud-based data sources:
@@ -99,7 +106,7 @@ cloud-based data sources:
 ``` r
 ## Creates a local `SpatRaster`
 dem_local <- sdp_get_raster(catalog_id="R3D009",
-                            download_data=TRUE,
+                            download_files=TRUE,
                             download_path="~/Downloads", 
                             overwrite=FALSE)
 ```
@@ -295,8 +302,8 @@ timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Loo
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
 #>                        approach        timing
-#> 1                   Single Call 20.43772 secs
-#> 2    Looping sdp_extract_data() 32.68482 secs
-#> 3 Looping over sdp_get_raster() 32.89033 secs
-#> 4                       Foreach 36.05433 secs
+#> 1                   Single Call 19.74518 secs
+#> 2    Looping sdp_extract_data() 27.44984 secs
+#> 3 Looping over sdp_get_raster() 29.54908 secs
+#> 4                       Foreach 35.03244 secs
 ```
