@@ -2,6 +2,29 @@ test_that("sdp_get_raster() returns data for single layer datasets", {
   expect_s4_class(sdp_get_raster("R1D014"), "SpatRaster")
 })
 
+## Regression pins for names(raster). These assertions lock in the exact
+## form of layer names produced by each TimeSeriesType so that the
+## decomposition refactor of sdp_get_raster() can be verified not to
+## silently change them. sdp_extract_data() relies on Yearly names being
+## character (via int-to-string coercion) and Daily names being parseable
+## by as.Date(); changing either form would break downstream filtering.
+test_that("sdp_get_raster() preserves Single layer-name format (basename minus .tif)", {
+  r <- sdp_get_raster("R1D014")
+  expect_equal(names(r), "UER_mask_3m_v1")
+})
+
+test_that("sdp_get_raster() preserves Yearly layer-name format (4-digit year as character)", {
+  r <- sdp_get_raster("R4D003", years = 2003:2004)
+  expect_equal(names(r), c("2003", "2004"))
+})
+
+test_that("sdp_get_raster() preserves Daily layer-name format (YYYY-MM-DD)", {
+  r <- sdp_get_raster("R4D004",
+                      date_start = as.Date("2020-11-01"),
+                      date_end   = as.Date("2020-11-01"))
+  expect_equal(names(r), "2020-11-01")
+})
+
 test_that("sdp_get_raster() returns data for daily timeseries when dates are specified", {
   expect_s4_class(sdp_get_raster("R4D004",date_start=as.Date("2020-11-01"),date_end=as.Date("2020-11-01")), "SpatRaster")
 })
