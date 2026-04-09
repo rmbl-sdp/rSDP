@@ -60,14 +60,14 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
       }
       raster_path <- unlist(lapply(years_cat, FUN=function(x) {gsub("{year}",x,raster_path,fixed=TRUE)}))
       if(verbose==TRUE){
-        print(paste("Returning yearly dataset with",length(years_cat),"layers..."))
+        message(paste("Returning yearly dataset with",length(years_cat),"layers..."))
       }
       raster_names <- years_cat
     }else if(is.null(years) & is.null(date_start) & is.null(date_end) & cat_line$TimeSeriesType=="Yearly"){
       cat_years <- cat_line$MinYear:cat_line$MaxYear
       raster_path <- unlist(lapply(cat_years, FUN=function(x) {gsub("{year}",x,raster_path,fixed=TRUE)}))
       if(verbose==TRUE){
-        print(paste("Returning yearly dataset with",length(cat_years),"layers..."))
+        message(paste("Returning yearly dataset with",length(cat_years),"layers..."))
       }
       raster_names <- cat_years
 
@@ -85,7 +85,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
       raster_sub <- gsub("{year}","%s",raster_path,fixed=TRUE)
       raster_path <- sprintf(raster_sub,years_overlap)
       if(verbose==TRUE){
-        print(paste("Returning yearly dataset with",length(raster_path),"layers..."))
+        message(paste("Returning yearly dataset with",length(raster_path),"layers..."))
       }
       raster_names <- years_overlap
 
@@ -102,7 +102,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
       raster_sub <- gsub("{year}","%s",raster_sub,fixed=TRUE)
       raster_path <- sprintf(raster_sub,years_overlap,months_overlap)
       if(verbose==TRUE){
-        print(paste("Returning monthly dataset with",length(raster_path),"layers..."))
+        message(paste("Returning monthly dataset with",length(raster_path),"layers..."))
       }
       raster_names <- format(dates_overlap,format="%Y-%m")
 
@@ -117,7 +117,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
       raster_sub <- gsub("{year}","%s",raster_sub,fixed=TRUE)
       raster_path <- sprintf(raster_sub,years_overlap,months_overlap)
       if(verbose==TRUE){
-        print(paste("Returning monthly dataset with",length(raster_path),"layers..."))
+        message(paste("Returning monthly dataset with",length(raster_path),"layers..."))
       }
       raster_names <- format(dates_overlap,format="%Y-%m")
 
@@ -132,7 +132,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
       raster_sub <- gsub("{year}","%s",raster_sub,fixed=TRUE)
       raster_path <- sprintf(raster_sub,years_overlap,months_overlap)
       if(verbose==TRUE){
-        print(paste("Returning monthly dataset with",length(raster_path),"layers..."))
+        message(paste("Returning monthly dataset with",length(raster_path),"layers..."))
       }
       raster_names <- format(dates_overlap,format="%Y-%m")
 
@@ -145,12 +145,12 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
       raster_sub <- gsub("{year}","%s",raster_sub,fixed=TRUE)
       raster_path <- sprintf(raster_sub,cat_years,cat_months_pad)
       if(verbose==TRUE){
-        print(paste("Returning monthly dataset with",length(raster_path),"layers..."))
+        message(paste("Returning monthly dataset with",length(raster_path),"layers..."))
       }
       raster_names <- format(cat_months,format="%Y-%m")
 
     }else if(!is.null(date_start) & !is.null(date_end) & cat_line$TimeSeriesType=="Daily"){
-      cat_days <- seq(as.Date(cat_line$MinDate,format="%m/%d/%y"),as.Date(cat_line$MaxDate,format="%m/%d/%y"),by="day")
+      cat_days <- seq(cat_line$MinDate, cat_line$MaxDate, by="day")
       days_input <- seq(date_start,date_end,by="day")
       days_overlap <- days_input[days_input %in% cat_days]
       if(length(days_overlap)==0){
@@ -168,13 +168,12 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
         }
       raster_path <- apply(days_df,MARGIN=1,FUN=repl_fun)
       if(verbose==TRUE){
-        print(paste("Returning daily dataset with",length(days_overlap),"layers..."))
+        message(paste("Returning daily dataset with",length(days_overlap),"layers..."))
       }
       raster_names <- format(days_overlap,format="%Y-%m-%d")
 
     }else if(is.null(date_start) & is.null(date_end) & cat_line$TimeSeriesType=="Daily"){
-      cat_days <- seq(as.Date(cat_line$MinDate,format="%m/%d/%y"),
-                      as.Date(cat_line$MaxDate,format="%m/%d/%y"),by="day")[1:30]
+      cat_days <- seq(cat_line$MinDate, cat_line$MaxDate, by="day")[1:30]
       years_overlap <- format(cat_days,format="%Y")
       doys_overlap <- format(cat_days,format="%j")
       days_df <- data.frame(raster_path,years_overlap,doys_overlap)
@@ -185,7 +184,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
       }
       raster_path <- apply(days_df,MARGIN=1,FUN=repl_fun)
       if(verbose==TRUE){
-        print(paste("No time bounds set for daily data, returning the first 30 layers. Specify `date_start` or `date_end` to retrieve larger daily time-series..."))
+        message(paste("No time bounds set for daily data, returning the first 30 layers. Specify `date_start` or `date_end` to retrieve larger daily time-series..."))
       }
       raster_names <- format(cat_days,format="%Y-%m-%d")
     }else if(cat_line$TimeSeriesType=="Single"){
@@ -201,7 +200,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
                                         output_dir=download_path,
                                         overwrite=overwrite)
       if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
-        print("Loading raster from local paths.")
+        message("Loading raster from local paths.")
         raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path)),...)
       }else{
         stop("Unable to download datasets locally.")
@@ -224,7 +223,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
                                           output_dir=download_path,
                                           overwrite=overwrite)
         if(all(dl_results$success==TRUE & dl_results$status_code %in% c(200,206))){
-          print("Loading raster from local paths.")
+          message("Loading raster from local paths.")
           raster <- terra::rast(paste0(file.path(normalizePath(download_path)),"/",basename(raster_path)),...)
         }else{
           stop("Unable to download datasets locally.")
@@ -329,11 +328,11 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
     }
 
     if(terra::crs(locations) != terra::crs(raster) & verbose==TRUE){
-      print(paste("Re-projecting locations to coordinate system of the raster."))
+      message(paste("Re-projecting locations to coordinate system of the raster."))
       locations <- terra::project(locations, y="EPSG:32613")
     }
     if(verbose==TRUE){
-      print(paste("Extracting data at", terra::nrow(locations),"locations for",
+      message(paste("Extracting data at", terra::nrow(locations),"locations for",
                   terra::nlyr(raster), "raster layers."))
     }
     extracted <- terra::extract(x=raster, y=locations, bind=FALSE, method=method, fun=sum_fun, ...)
@@ -350,7 +349,7 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
       warning("Function will always return a data frame if `bind=FALSE`.")
     }
     if(verbose==TRUE){
-      print(paste("Extraction complete."))
+      message(paste("Extraction complete."))
     }
     return(extracted)
 }

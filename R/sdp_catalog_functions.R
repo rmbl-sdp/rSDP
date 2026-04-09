@@ -45,9 +45,8 @@ sdp_get_catalog <- function(domains=c("UG","UER","GT"),
   stopifnot(all(domains %in% sdp_domains))
   stopifnot(all(types %in% sdp_types))
   stopifnot(all(releases %in% sdp_releases))
-  stopifnot(is.logical(deprecated) & length(deprecated==1))
-  stopifnot(is.logical(return_stac) & length(return_stac==1))
-  stopifnot()
+  stopifnot(is.logical(deprecated))
+  stopifnot(is.logical(return_stac) && length(return_stac) == 1)
 
   #catalog <- rSDP:::catalog
   catalog <- get0("SDP_catalog", envir = asNamespace("rSDP"))
