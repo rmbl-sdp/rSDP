@@ -1,7 +1,7 @@
 #' Create an R object representing an SDP dataset.
 #'
 #' @param catalog_id character. A single valid catalog number for an SDP dataset. This is in the `CatalogID` field for information returned by `sdp_get_catalog()`.
-#' @param url character. A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either `catalog_id` or `url`, but not both.
+#' @param url character. A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either `catalog_id` or `url`, but not both. Note that when a URL is provided directly, scale/offset metadata is not applied to the returned raster (since there is no catalog entry to read it from); use `catalog_id` if you need those applied automatically.
 #' @param years numeric. For annual time-series data, a numeric vector specifying which years to return. The default `NULL` returns all available years.
 #' @param months numeric. For monthly time-series data, a numeric vector specifying which months of data to return. The default `NULL` returns all available months.
 #' @param date_start class `Date`. For daily time-series data, the first day of data to return.
@@ -230,13 +230,17 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
         }
       }
       terra::crs(raster) <- .SDP_CRS
-      terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
+      ## Scale/offset are not applied for raw-URL inputs: there is no
+      ## catalog entry to read DataScaleFactor/DataOffset from in this
+      ## branch. Users needing scale/offset should pass `catalog_id`
+      ## instead. The previous code referenced `cat_line` here, which
+      ## does not exist in this branch and produced a cryptic error.
       return(raster)
     }else{
-      errorCondition("A valid URL must start with 'https://'")
+      stop("A valid URL must start with 'https://'")
     }
   }else{
-    errorCondition("You must specify either a dataset catalog ID, or a URL.")
+    stop("You must specify either a dataset catalog ID, or a URL.")
   }
 
 }
