@@ -32,16 +32,16 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
                            download_files=FALSE,download_path=NULL,overwrite=FALSE,...){
 
   stopifnot("Please specify either catalog_id or url, not both."=is.null(catalog_id) | is.null(url))
-  stopifnot(class(catalog_id) == "character" | class(url) == "character")
+  stopifnot(is.character(catalog_id) | is.character(url))
   stopifnot("Please specify a single Catalog ID or URL."=length(catalog_id) %in% c(0,1) & length(url) %in% c(0,1))
   stopifnot("Please specify a single Catalog ID or URL."=length(c(catalog_id,url)) == 1)
-  stopifnot("Date ranges must be class `Date` if specified."=(is.null(date_start) & is.null(date_end)) | (class(date_start)=="Date" & class(date_end)=="Date"))
-  stopifnot("You must specify `download_path` if `download_files=TRUE`"=(download_files==FALSE & is.null(download_path)) | (download_files==TRUE & class(download_path)=="character"))
+  stopifnot("Date ranges must be class `Date` if specified."=(is.null(date_start) & is.null(date_end)) | (inherits(date_start, "Date") & inherits(date_end, "Date")))
+  stopifnot("You must specify `download_path` if `download_files=TRUE`"=(download_files==FALSE & is.null(download_path)) | (download_files==TRUE & is.character(download_path)))
 
   months_pad <- formatC(as.numeric(months), width = 2, format = "d", flag = "0")
   stopifnot("Invalid months specified."=(all(months_pad %in% c(formatC(1:12, width = 2, format = "d", flag = "0")))) | is.null(months))
 
-  if(class(catalog_id)=="character"){
+  if(!is.null(catalog_id)){
     cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))
     cat_line <- cat[cat$CatalogID==catalog_id,]
     cat_url <- cat_line$Data.URL
@@ -211,7 +211,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
     terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
     return(raster)
 
-  }else if(class(url)=="character"){
+  }else if(!is.null(url)){
     url_start <- substr(url,1,8)
     if(url_start=="https://"){
       raster_path <- paste0(.SDP_VSICURL_PREFIX, url)
@@ -323,7 +323,7 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
       raster <- raster[[as.character(days_overlap)]]
     }
 
-    if('sf' %in% class(locations)){
+    if(inherits(locations, "sf")){
       locations <- terra::vect(locations)
     }
 
