@@ -23,28 +23,19 @@
 #'                           deprecated=FALSE,return_stac=FALSE)
 #' sdp_sub
 #'
-sdp_get_catalog <- function(domains=c("UG","UER","GT"),
-                            types=c("Mask","Topo","Vegetation","Hydro",
-                                    "Planning","Radiation","Snow","Climate",
-                                    "Imagery","Supplemental"),
-                            releases=c("Basemaps","Release1","Release2",
-                                       "Release3","Release4"),
-                            timeseries_types=c("Single","Yearly","Seasonal",
-                                               "Monthly","Daily"),
+sdp_get_catalog <- function(domains=.SDP_DOMAINS,
+                            types=.SDP_TYPES,
+                            releases=.SDP_RELEASES,
+                            timeseries_types=.SDP_TIMESERIES_TYPES,
                             deprecated=FALSE,return_stac=FALSE){
-
-  sdp_domains <- c("UG","UER","GT")
-  sdp_types <- c("Mask","Topo","Vegetation", "Hydro",
-                 "Planning","Radiation","Snow","Climate","Imagery","Supplemental")
-  sdp_releases <- c("Basemaps","Release1","Release2","Release3","Release4")
-  sdp_tstypes <- c("Single","Annual","Seasonal","Monthly","Daily")
 
   #utils::data("catalog",package="rSDP",envir=environment())
   ##sdp_cat_url <- "https://www.rmbl.org/wp-content/uploads/2021/04/SDP_product_table_4_26_2021.csv"
 
-  stopifnot(all(domains %in% sdp_domains))
-  stopifnot(all(types %in% sdp_types))
-  stopifnot(all(releases %in% sdp_releases))
+  stopifnot(all(domains %in% .SDP_DOMAINS))
+  stopifnot(all(types %in% .SDP_TYPES))
+  stopifnot(all(releases %in% .SDP_RELEASES))
+  stopifnot(all(timeseries_types %in% .SDP_TIMESERIES_TYPES))
   stopifnot(is.logical(deprecated))
   stopifnot(is.logical(return_stac) && length(return_stac) == 1)
 
@@ -75,7 +66,7 @@ sdp_get_catalog <- function(domains=c("UG","UER","GT"),
 #'
 #'
 sdp_get_metadata <- function(catalog_id,return_list=TRUE){
-  stopifnot(nchar(catalog_id)==6)
+  stopifnot(nchar(catalog_id) == .SDP_CATALOG_ID_NCHAR)
   stopifnot(length(catalog_id)==1)
 
   cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))

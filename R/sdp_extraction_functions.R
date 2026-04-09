@@ -45,7 +45,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
     cat <- sdp_get_catalog(deprecated=c(FALSE,TRUE))
     cat_line <- cat[cat$CatalogID==catalog_id,]
     cat_url <- cat_line$Data.URL
-    raster_path <- paste0("/vsicurl/",cat_url)
+    raster_path <- paste0(.SDP_VSICURL_PREFIX, cat_url)
 
     if(!is.null(years) & cat_line$TimeSeriesType=="Yearly"){
       cat_url <- cat_line$Data.URL
@@ -195,7 +195,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
     if(download_files==FALSE){
       raster <- terra::rast(raster_path,...)
     }else if(download_files==TRUE){
-      raster_path <- gsub("/vsicurl/","",raster_path)
+      raster_path <- gsub(.SDP_VSICURL_PREFIX, "", raster_path)
       dl_results <- rSDP::download_data(raster_path,
                                         output_dir=download_path,
                                         overwrite=overwrite)
@@ -207,18 +207,18 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
       }
     }
     names(raster) <- raster_names
-    terra::crs(raster) <- "EPSG:32613"
+    terra::crs(raster) <- .SDP_CRS
     terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
     return(raster)
 
   }else if(class(url)=="character"){
     url_start <- substr(url,1,8)
     if(url_start=="https://"){
-      raster_path <- paste0("/vsicurl/",url)
+      raster_path <- paste0(.SDP_VSICURL_PREFIX, url)
       if(download_files==FALSE){
         raster <- terra::rast(raster_path,...)
       }else if(download_files==TRUE){
-        raster_path <- gsub("/vsicurl/","",raster_path)
+        raster_path <- gsub(.SDP_VSICURL_PREFIX, "", raster_path)
         dl_results <- rSDP::download_data(raster_path,
                                           output_dir=download_path,
                                           overwrite=overwrite)
@@ -229,7 +229,7 @@ sdp_get_raster <- function(catalog_id=NULL,url=NULL,years=NULL,months=NULL,
           stop("Unable to download datasets locally.")
         }
       }
-      terra::crs(raster) <- "EPSG:32613"
+      terra::crs(raster) <- .SDP_CRS
       terra::scoff(raster) <- cbind(1/cat_line$DataScaleFactor,cat_line$DataOffset)
       return(raster)
     }else{
@@ -329,7 +329,7 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
 
     if(terra::crs(locations) != terra::crs(raster) & verbose==TRUE){
       message(paste("Re-projecting locations to coordinate system of the raster."))
-      locations <- terra::project(locations, y="EPSG:32613")
+      locations <- terra::project(locations, y=.SDP_CRS)
     }
     if(verbose==TRUE){
       message(paste("Extracting data at", terra::nrow(locations),"locations for",
