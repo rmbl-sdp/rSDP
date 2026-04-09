@@ -7,3 +7,9 @@ docs
 inst/doc
 /doc/
 /Meta/
+
+# Claude Code
+.claude/
+!.claude/settings.json
+!.claude/commands/
+!.claude/agents/
