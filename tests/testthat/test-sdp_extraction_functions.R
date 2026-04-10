@@ -25,6 +25,16 @@ test_that("sdp_get_raster() preserves Daily layer-name format (YYYY-MM-DD)", {
   expect_equal(names(r), "2020-11-01")
 })
 
+test_that("sdp_get_raster() accepts a direct URL (url= branch)", {
+  ## Integration test for the previously-broken URL branch. Uses a known
+  ## Single dataset's Data.URL from the catalog so it stays valid as long
+  ## as R1D014 exists. The URL branch does not apply scale/offset, and
+  ## that caveat is documented in @param url.
+  cat_row <- sdp_get_catalog(deprecated = c(FALSE, TRUE))
+  cat_row <- cat_row[cat_row$CatalogID == "R1D014", ]
+  expect_s4_class(sdp_get_raster(url = cat_row$Data.URL), "SpatRaster")
+})
+
 test_that("sdp_get_raster() returns data for daily timeseries when dates are specified", {
   expect_s4_class(sdp_get_raster("R4D004",date_start=as.Date("2020-11-01"),date_end=as.Date("2020-11-01")), "SpatRaster")
 })
