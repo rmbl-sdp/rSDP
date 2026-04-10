@@ -1,3 +1,16 @@
+# rSDP 0.2
+
+* Added STAC (SpatioTemporal Asset Catalog) support. Use `sdp_get_catalog(return_stac=TRUE)` to access the SDP catalog as a static STAC catalog via the `rstac` package. The catalog is browseable at `https://radiantearth.github.io/stac-browser/#/external/rmbl-sdp.s3.us-east-2.amazonaws.com/stac/v1/catalog.json`.
+* Added `stac-gen/` Python tooling for generating the static STAC catalog from the SDP product table.
+* Decomposed `sdp_get_raster()` into small, testable internal helpers (`R/internal_resolve.R`, `R/internal_load.R`, `R/internal_validate.R`). No changes to the exported function interface.
+* Fixed two latent bugs in `sdp_get_raster()`: the `url=` branch referenced an undefined variable (`cat_line`) and used `errorCondition()` instead of `stop()`.
+* Invalid argument combinations (e.g., `years` with Daily datasets) now produce clear error messages instead of cryptic `terra::rast()` failures.
+* Status messages now use `message()` instead of `print()` and can be silenced with `suppressMessages()`.
+* Centralized package constants in `R/constants.R`; resolved an inconsistency between "Yearly" and "Annual" in the `timeseries_types` validation.
+* Replaced `class(x) == "..."` comparisons with `inherits()` / `is.character()` per R 4.0+ best practice.
+* Removed unused `replace_strngs()` function.
+* Added 58 unit tests for the new internal helpers (no network required) plus regression-pin tests for `names(raster)` output.
+
 # rSDP 0.1
 
 * Initial public release for beta testing. Feedback welcome! Please add issues you find to the [GitHub Repository](https://github.com/rmbl-sdp/rSDP/issues) for the package. If possible, please include a [reproducible example](https://community.rstudio.com/t/faq-whats-a-reproducible-example-reprex-and-how-do-i-create-one/5219)

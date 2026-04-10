@@ -5,7 +5,7 @@
 #' @param releases Which release (group) of data products to return.
 #' @param timeseries_types Some datasets are structured as single datasets (e.g. `Single`), and others are time-series with various periods (e.g.`Monthly`).
 #' @param deprecated Should older versions of datasets be returned, or just the latest version?
-#' @param return_stac NOT IMPLEMENTED: Should the results be returned as a Spatio-temporal Asset Catalog? Otherwise return and ordinary data frame.
+#' @param return_stac Logical. If `TRUE`, returns the root of the RMBL SDP's static STAC catalog as an `rstac` object (requires the `rstac` package). The returned catalog is browseable via `rstac` traversal methods but does not support `rstac::stac_search()` (which requires a STAC API server). You can browse the catalog interactively at `https://radiantearth.github.io/stac-browser/#/external/rmbl-sdp.s3.us-east-2.amazonaws.com/stac/v1/catalog.json`. When `return_stac=TRUE`, filter arguments (`domains`, `types`, etc.) are ignored; use `rstac` methods to filter the returned catalog. Default `FALSE` returns an ordinary data frame.
 #'
 #' @return
 #' A data frame containing basic catalog information for the matched data products.
@@ -38,6 +38,16 @@ sdp_get_catalog <- function(domains=.SDP_DOMAINS,
   stopifnot(all(timeseries_types %in% .SDP_TIMESERIES_TYPES))
   stopifnot(is.logical(deprecated))
   stopifnot(is.logical(return_stac) && length(return_stac) == 1)
+
+  if (isTRUE(return_stac)) {
+    rlang::check_installed("rstac", reason = "to return a STAC catalog object")
+    if (!is.null(domains) && !identical(domains, .SDP_DOMAINS) ||
+        !is.null(types) && !identical(types, .SDP_TYPES)) {
+      message("Filter arguments are ignored when return_stac=TRUE. Use rstac methods to filter the returned catalog.")
+    }
+    stac_root <- "https://rmbl-sdp.s3.us-east-2.amazonaws.com/stac/v1/catalog.json"
+    return(rstac::read_stac(stac_root))
+  }
 
   #catalog <- rSDP:::catalog
   catalog <- get0("SDP_catalog", envir = asNamespace("rSDP"))

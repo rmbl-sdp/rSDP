@@ -1,6 +1,6 @@
 Package: rSDP
 Title: Discover, Query, and Subset Data from the RMBL Spatial Data Platform
-Version: 0.1
+Version: 0.2
 Authors@R: 
     person("Ian", "Breckheimer", , "ikb@rmbl.org", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4698-977X"))
@@ -20,12 +20,13 @@ Imports:
     utils,
     xml2,
     curl
-Suggests: 
+Suggests:
     rmarkdown,
     knitr,
+    rstac,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: 
-    R (>= 2.10),
+    R (>= 3.5)
 LazyData: true
 VignetteBuilder: knitr
