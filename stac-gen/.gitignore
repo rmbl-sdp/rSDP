@@ -1,0 +1,12 @@
+# Build outputs
+out/
+
+# Cached remote data (XML metadata, COG headers, CSV)
+.cache/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+dist/
