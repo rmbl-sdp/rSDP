@@ -18,10 +18,10 @@ validate:
 	@echo "Validation complete."
 
 sync-staging:
-	aws s3 sync $(OUT_DIR) $(STAGING_PREFIX)
+	aws s3 sync $(OUT_DIR) $(STAGING_PREFIX) --acl public-read
 
 sync-live:
-	aws s3 sync $(STAGING_PREFIX) $(LIVE_PREFIX)
+	aws s3 sync $(STAGING_PREFIX) $(LIVE_PREFIX) --acl public-read
 
 cors:
 	aws s3api put-bucket-cors --bucket rmbl-sdp --cors-configuration file://s3-cors.json
