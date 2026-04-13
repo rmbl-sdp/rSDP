@@ -61,6 +61,19 @@ def _safe_float(s: str) -> float | None:
         return None
 
 
+def _parse_resolution(s: str) -> float | None:
+    """Parse a resolution string like '1m', '27m', '5cm', '0.333m' to meters."""
+    if not s or not s.strip():
+        return None
+    s = s.strip().lower()
+    if s.endswith("cm"):
+        val = _safe_float(s[:-2])
+        return val / 100.0 if val is not None else None
+    if s.endswith("m"):
+        return _safe_float(s[:-1])
+    return _safe_float(s)
+
+
 def parse_catalog(csv_text: str) -> list[dict]:
     """Parse catalog CSV text into a list of row dicts with typed fields."""
     reader = csv.DictReader(io.StringIO(csv_text))
@@ -73,7 +86,7 @@ def parse_catalog(csv_text: str) -> list[dict]:
                 "Type": raw["Type"].strip(),
                 "Product": raw["Product"].strip(),
                 "Domain": raw["Domain"].strip(),
-                "Resolution": _safe_float(raw.get("Resolution", "")),
+                "Resolution": _parse_resolution(raw.get("Resolution", "")),
                 "Deprecated": raw.get("Deprecated", "").strip().upper() == "TRUE",
                 "MinDate": _parse_date(raw.get("MinDate", "")),
                 "MaxDate": _parse_date(raw.get("MaxDate", "")),

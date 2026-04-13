@@ -159,17 +159,18 @@ def build_item(
     bbox = cog_info.get("wgs84_bbox") or [-180, -90, 180, 90]
     geometry = _bbox_to_geometry(bbox)
 
-    # Datetime handling per STAC 1.0 spec.
-    if end_date is None or start_date == end_date:
-        # Single or single-day: instant datetime.
-        dt = _to_datetime(start_date)
-        start_dt = None
-        end_dt = None
-    else:
-        # Interval: datetime=null, provide start/end.
-        dt = None
+    # Datetime handling. For intervals (Yearly/Monthly), we set datetime
+    # to the start of the interval AND provide start/end. This is valid
+    # per STAC 1.x (datetime MAY be non-null when start/end are given)
+    # and avoids display issues in STAC Browser and other clients that
+    # render datetime=null as "No date".
+    dt = _to_datetime(start_date)
+    if end_date is not None and start_date != end_date:
         start_dt = _to_datetime(start_date)
         end_dt = _to_datetime(end_date)
+    else:
+        start_dt = None
+        end_dt = None
 
     properties = {"created": datetime.now(timezone.utc).isoformat()}
     if row.get("Resolution"):
