@@ -1,5 +1,8 @@
 # rSDP 0.2
 
+* **New GMUG domain**: Added 16 datasets for the Gunnison, Grand Mesa, and Uncompahgre National Forests as Release 5. Includes vegetation canopy structure (cover, height, understory), topographic products (DEM, slope, aspect, hillshade, flow accumulation) at 3m and 9m resolution, and summer/winter solstice solar radiation — all derived from 2015–2021 LiDAR data. Access with `sdp_get_catalog(domains="GMUG")`.
+* Updated catalog to 156 products across 4 domains (UG, UER, GT, GMUG).
+* Added `scripts/update_catalog.sh` for automated catalog updates across both the R package and STAC pipelines.
 * Added STAC (SpatioTemporal Asset Catalog) support. Use `sdp_get_catalog(return_stac=TRUE)` to access the SDP catalog as a static STAC catalog via the `rstac` package. The catalog is browseable at `https://radiantearth.github.io/stac-browser/#/external/rmbl-sdp.s3.us-east-2.amazonaws.com/stac/v1/catalog.json`.
 * Added `stac-gen/` Python tooling for generating the static STAC catalog from the SDP product table.
 * Decomposed `sdp_get_raster()` into small, testable internal helpers (`R/internal_resolve.R`, `R/internal_load.R`, `R/internal_validate.R`). No changes to the exported function interface.
