@@ -12,7 +12,7 @@ import requests
 # Same URL as data-raw/SDP_catalog.R uses — canonical source.
 DEFAULT_CATALOG_URL = (
     "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/"
-    "SDP_product_table_04_11_2023.csv"
+    "SDP_product_table_04_14_2026.csv"
 )
 
 CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache"
@@ -38,13 +38,20 @@ def fetch_catalog_csv(
 
 
 def _parse_date(s: str) -> date | None:
-    """Parse M/D/YYYY date strings from the catalog CSV."""
+    """Parse date strings from the catalog CSV.
+
+    Handles both 4-digit year (M/D/YYYY) and 2-digit year (M/D/YY)
+    formats, since the upstream CSV has used both over time.
+    """
     if not s or s.strip() == "":
         return None
-    try:
-        return datetime.strptime(s.strip(), "%m/%d/%Y").date()
-    except ValueError:
-        return None
+    s = s.strip()
+    for fmt in ("%m/%d/%Y", "%m/%d/%y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    return None
 
 
 def _safe_int(s: str) -> int | None:
