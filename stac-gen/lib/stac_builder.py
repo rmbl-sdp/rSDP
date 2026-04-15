@@ -223,18 +223,46 @@ def build_item(
     # Add asset to the item first (pystac requires an owner for extensions).
     item.add_asset("data", asset)
 
-    # Raster extension on the asset.
+    # Raster extension on the asset — one entry per COG band.
     scale = row.get("DataScaleFactor")
     offset = row.get("DataOffset")
-    band = RasterBand.create(
-        data_type=cog_info.get("dtype", "float32"),
-        nodata=cog_info.get("nodata"),
-        scale=1.0 / scale if scale else None,
-        offset=offset,
-        unit=row.get("DataUnit") or None,
+    cog_bands = cog_info.get("bands", [])
+    band_count = cog_info.get("band_count", 1)
+
+    # Detect RGB/RGBA imagery: uint8 with 3-4 bands. These don't carry
+    # meaningful scale/offset/unit (they're display imagery, not
+    # scientific data). All other products inherit scale/offset/unit
+    # from the catalog metadata, applied uniformly across bands.
+    is_rgb_imagery = (
+        band_count in (3, 4)
+        and cog_bands
+        and all(cb.get("dtype") == "uint8" for cb in cog_bands)
     )
-    raster_ext = RasterExtension.ext(item.assets["data"], add_if_missing=True)
-    raster_ext.apply(bands=[band])
+
+    if cog_bands:
+        raster_bands = []
+        for cb in cog_bands:
+            band_kwargs = {
+                "data_type": cb.get("dtype", "float32"),
+                "nodata": cb.get("nodata"),
+            }
+            if not is_rgb_imagery:
+                band_kwargs["scale"] = 1.0 / scale if scale else None
+                band_kwargs["offset"] = offset
+                band_kwargs["unit"] = row.get("DataUnit") or None
+            raster_bands.append(RasterBand.create(**band_kwargs))
+        raster_ext = RasterExtension.ext(item.assets["data"], add_if_missing=True)
+        raster_ext.apply(bands=raster_bands)
+    else:
+        band = RasterBand.create(
+            data_type="float32",
+            nodata=None,
+            scale=1.0 / scale if scale else None,
+            offset=offset,
+            unit=row.get("DataUnit") or None,
+        )
+        raster_ext = RasterExtension.ext(item.assets["data"], add_if_missing=True)
+        raster_ext.apply(bands=[band])
 
     return item
 

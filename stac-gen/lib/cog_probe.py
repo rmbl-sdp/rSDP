@@ -7,6 +7,7 @@ product's time series. Caches results to .cache/headers/.
 
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import rasterio
@@ -70,14 +71,26 @@ def _read_header(cog_url: str) -> dict:
             "float32": "float32",
             "float64": "float64",
         }
-        raw_dtype = str(ds.dtypes[0])
-        stac_dtype = dtype_map.get(raw_dtype, raw_dtype)
+
+        # Per-band info for raster:bands (supports multi-band COGs).
+        bands = []
+        for i in range(1, ds.count + 1):
+            raw_dtype = str(ds.dtypes[i - 1])
+            nodata_val = ds.nodatavals[i - 1]
+            if nodata_val is not None and (
+                math.isnan(nodata_val) or math.isinf(nodata_val)
+            ):
+                nodata_val = None
+            bands.append({
+                "dtype": dtype_map.get(raw_dtype, raw_dtype),
+                "nodata": nodata_val,
+            })
 
         return {
             "width": ds.width,
             "height": ds.height,
-            "dtype": stac_dtype,
-            "nodata": ds.nodata,
+            "band_count": ds.count,
+            "bands": bands,
             "transform": list(ds.transform)[:6],
             "crs_epsg": epsg,
             "wgs84_bbox": wgs84_bbox,
