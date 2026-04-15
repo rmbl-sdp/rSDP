@@ -129,6 +129,19 @@ def build_collection(
         }
     )
 
+    # Thumbnail asset (shared across all items in the collection).
+    thumb_url = _derive_thumbnail_url(row)
+    if thumb_url:
+        collection.add_asset(
+            "thumbnail",
+            pystac.Asset(
+                href=thumb_url,
+                media_type=pystac.MediaType.PNG,
+                roles=["thumbnail"],
+                title=f"Thumbnail for {metadata.get('title') or row['Product']}",
+            ),
+        )
+
     return collection
 
 
@@ -262,3 +275,29 @@ def _to_datetime(d: date | None) -> datetime | None:
     if d is None:
         return None
     return datetime(d.year, d.month, d.day, tzinfo=timezone.utc)
+
+
+def _derive_thumbnail_url(row: dict) -> str | None:
+    """Derive the thumbnail PNG URL from a catalog row's Data.URL.
+
+    Convention: thumbnails are named {product_stem}_thumbnail.png and
+    live in the same S3 directory as the data files.
+
+    For Single products: replace .tif with _thumbnail.png.
+    For time-series: the Data.URL contains template placeholders in
+    the filename and lives in a product subdirectory. The thumbnail
+    is named after that subdirectory in the parent directory.
+    """
+    url = row.get("Data.URL", "")
+    if not url:
+        return None
+
+    if row["TimeSeriesType"] == "Single":
+        return url.replace(".tif", "_thumbnail.png")
+
+    # Time-series: URL like .../product_dir/file_{year}.tif
+    # Thumbnail is .../product_dir_thumbnail.png (in parent dir)
+    dir_url = url.rsplit("/", 1)[0]        # strip filename
+    parent = dir_url.rsplit("/", 1)[0]     # parent directory URL
+    stem = dir_url.rsplit("/", 1)[1]       # product directory name
+    return f"{parent}/{stem}_thumbnail.png"
