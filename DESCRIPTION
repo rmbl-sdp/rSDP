@@ -1,6 +1,6 @@
 Package: rSDP
 Title: Discover, Query, and Subset Data from the RMBL Spatial Data Platform
-Version: 0.2
+Version: 0.3
 Authors@R: 
     person("Ian", "Breckheimer", , "ikb@rmbl.org", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4698-977X"))

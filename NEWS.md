@@ -1,3 +1,10 @@
+# rSDP 0.3
+
+* New `sdp_browse()` function renders a visual thumbnail grid of data products in the RStudio/Positron Viewer pane. Accepts the same filter arguments as `sdp_get_catalog()`. Mirrors the `browse()` feature in the pysdp companion package.
+* STAC collections now include thumbnail assets, displayed automatically in STAC Browser.
+* Fixed invalid JSON in STAC items: `NaN` nodata values from COG headers are now serialized as `null`.
+* Fixed multi-band STAC metadata: RGB/RGBA basemaps now correctly declare one `raster:bands` entry per COG band instead of a single entry.
+
 # rSDP 0.2
 
 * **New GMUG domain**: Added 16 datasets for the Gunnison, Grand Mesa, and Uncompahgre National Forests as Release 5. Includes vegetation canopy structure (cover, height, understory), topographic products (DEM, slope, aspect, hillshade, flow accumulation) at 3m and 9m resolution, and summer/winter solstice solar radiation — all derived from 2015–2021 LiDAR data. Access with `sdp_get_catalog(domains="GMUG")`.
