@@ -5,11 +5,10 @@
 \title{Discover SDP data by downloading catalog information.}
 \usage{
 sdp_get_catalog(
-  domains = c("UG", "UER", "GT"),
-  types = c("Mask", "Topo", "Vegetation", "Hydro", "Planning", "Radiation", "Snow",
-    "Climate", "Imagery", "Supplemental"),
-  releases = c("Basemaps", "Release1", "Release2", "Release3", "Release4"),
-  timeseries_types = c("Single", "Yearly", "Seasonal", "Monthly", "Daily"),
+  domains = .SDP_DOMAINS,
+  types = .SDP_TYPES,
+  releases = .SDP_RELEASES,
+  timeseries_types = .SDP_TIMESERIES_TYPES,
   deprecated = FALSE,
   return_stac = FALSE
 )
@@ -25,7 +24,7 @@ sdp_get_catalog(
 
 \item{deprecated}{Should older versions of datasets be returned, or just the latest version?}
 
-\item{return_stac}{NOT IMPLEMENTED: Should the results be returned as a Spatio-temporal Asset Catalog? Otherwise return and ordinary data frame.}
+\item{return_stac}{Logical. If \code{TRUE}, returns the root of the RMBL SDP's static STAC catalog as an \code{rstac} object (requires the \code{rstac} package). The returned catalog is browseable via \code{rstac} traversal methods but does not support \code{rstac::stac_search()} (which requires a STAC API server). You can browse the catalog interactively at \verb{https://radiantearth.github.io/stac-browser/#/external/rmbl-sdp.s3.us-east-2.amazonaws.com/stac/v1/catalog.json}. When \code{return_stac=TRUE}, filter arguments (\code{domains}, \code{types}, etc.) are ignored; use \code{rstac} methods to filter the returned catalog. Default \code{FALSE} returns an ordinary data frame.}
 }
 \value{
 A data frame containing basic catalog information for the matched data products.

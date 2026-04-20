@@ -21,7 +21,7 @@ sdp_get_raster(
 \arguments{
 \item{catalog_id}{character. A single valid catalog number for an SDP dataset. This is in the \code{CatalogID} field for information returned by \code{sdp_get_catalog()}.}
 
-\item{url}{character. A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either \code{catalog_id} or \code{url}, but not both.}
+\item{url}{character. A valid URL (e.g. https://path.to.dataset.tif) for the cloud-based dataset. You should specify either \code{catalog_id} or \code{url}, but not both. Note that when a URL is provided directly, scale/offset metadata is not applied to the returned raster (since there is no catalog entry to read it from); use \code{catalog_id} if you need those applied automatically.}
 
 \item{years}{numeric. For annual time-series data, a numeric vector specifying which years to return. The default \code{NULL} returns all available years.}
 
