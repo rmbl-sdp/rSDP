@@ -11,7 +11,8 @@ sdp_browse(
   timeseries_types = .SDP_TIMESERIES_TYPES,
   deprecated = FALSE,
   columns = 4L,
-  width = 220L
+  width = 220L,
+  max_products = NULL
 )
 }
 \arguments{
@@ -27,16 +28,25 @@ sdp_browse(
 
 \item{columns}{Integer. Number of columns in the grid (default 4).}
 
-\item{width}{Integer. Minimum card width in pixels (default 220).}
+\item{width}{Integer. Card width in pixels (default 220).}
+
+\item{max_products}{Integer or NULL. Cap the number of products shown.
+\code{NULL} (default) shows all matches.}
 }
 \value{
 A \code{browsable} HTML object (displays in the Viewer pane when
 printed interactively, or can be saved with \code{htmltools::save_html()}).
 }
 \description{
-Renders an interactive HTML grid of data product cards showing
-thumbnails, product names, and key metadata. The output displays
-in the RStudio/Positron Viewer pane or in a web browser.
+Renders an HTML grid of data product cards showing thumbnails,
+product names, key metadata, SDP Browser links, and copyable
+\code{sdp_get_raster()} snippets. The output displays in the
+RStudio/Positron Viewer pane or in a web browser.
+}
+\details{
+The HTML uses only element attributes (no inline \code{style}, no
+JavaScript) for maximum compatibility across RStudio, Positron,
+Quarto, and R Markdown.
 }
 \examples{
 \dontrun{
@@ -46,7 +56,7 @@ sdp_browse(types = "Vegetation")
 ## Browse the new GMUG domain
 sdp_browse(domains = "GMUG")
 
-## Narrow to topo products at 3m resolution
-sdp_browse(types = "Topo", domains = "GMUG")
+## Show only the first 8 products in a 2-column grid
+sdp_browse(types = "Topo", columns = 2, max_products = 8)
 }
 }
