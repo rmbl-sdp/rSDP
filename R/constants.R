@@ -20,9 +20,9 @@
                 "Planning", "Radiation", "Snow", "Climate",
                 "Imagery", "Supplemental")
 
-.SDP_RELEASES <- c("Basemaps", "Release1", "Release2", "Release3", "Release4", "Release5")
+.SDP_RELEASES <- c("Basemaps", "Release1", "Release2", "Release3", "Release4", "Release5", "Release6")
 
-.SDP_TIMESERIES_TYPES <- c("Single", "Yearly", "Seasonal", "Monthly", "Daily")
+.SDP_TIMESERIES_TYPES <- c("Single", "Yearly", "Seasonal", "Monthly", "Weekly", "Daily")
 
 ## Length (in characters) of a valid SDP Catalog ID (e.g., "R3D009", "BM012").
 .SDP_CATALOG_ID_NCHAR <- 6L

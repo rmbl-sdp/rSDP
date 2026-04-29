@@ -145,7 +145,7 @@ def main():
             cat_id = row["CatalogID"]
             meta = metadata_cache.get(cat_id, {})
             cog = cog_cache.get(cat_id, {})
-            slices = resolve_time_slices(row)
+            slices = resolve_time_slices(row, use_cache=use_cache)
 
             collection = build_collection(row, meta, cog, slices)
 

@@ -2,14 +2,21 @@
 
 Mirrors the R package's .resolve_time_slices() logic in
 R/internal_resolve.R. The template placeholders are {year}, {month},
-{day} where day is day-of-year (DOY, 1-366).
+{day} (day-of-year, DOY 1-366), and {calendarday} (day-of-month, 1-31).
+
+For irregular time series (e.g., Weekly drone imagery), the dates
+cannot be enumerated from a formula. These products are resolved by
+probing S3 to discover which files actually exist, via s3_manifest.py.
 """
 
 from datetime import date, timedelta
 
+from .s3_manifest import build_manifest
+
 
 def resolve_time_slices(
     row: dict,
+    use_cache: bool = True,
 ) -> list[tuple[date, date | None, str]]:
     """Expand a catalog row into time slices.
 
@@ -31,6 +38,9 @@ def resolve_time_slices(
 
     if ts_type == "Daily":
         return _resolve_daily(row, template)
+
+    if ts_type == "Weekly":
+        return build_manifest(row, use_cache=use_cache)
 
     raise ValueError(f"Unsupported TimeSeriesType: {ts_type!r}")
 

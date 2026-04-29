@@ -12,7 +12,7 @@ import requests
 # Same URL as data-raw/SDP_catalog.R uses — canonical source.
 DEFAULT_CATALOG_URL = (
     "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/"
-    "SDP_product_table_04_14_2026.csv"
+    "SDP_product_table_04_29_2026.csv"
 )
 
 CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache"
@@ -100,6 +100,7 @@ def parse_catalog(csv_text: str) -> list[dict]:
                 "MinYear": _safe_int(raw.get("MinYear", "")),
                 "MaxYear": _safe_int(raw.get("MaxYear", "")),
                 "TimeSeriesType": raw.get("TimeSeriesType", "").strip(),
+                "TimeSeriesRegularity": raw.get("TimeSeriesRegularity", "").strip(),
                 "DataType": raw.get("DataType", "").strip(),
                 "DataUnit": raw.get("DataUnit", "").strip(),
                 "DataScaleFactor": _safe_float(
@@ -108,6 +109,7 @@ def parse_catalog(csv_text: str) -> list[dict]:
                 "DataOffset": _safe_float(raw.get("DataOffset", "")),
                 "Data.URL": raw.get("Data.URL", "").strip(),
                 "Metadata.URL": raw.get("Metadata.URL", "").strip(),
+                "ColorRampDefault": raw.get("ColorRampDefault", "").strip(),
             }
         )
     return rows
