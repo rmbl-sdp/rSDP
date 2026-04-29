@@ -313,8 +313,10 @@ def _derive_thumbnail_url(row: dict) -> str | None:
 
     For Single products: replace .tif with _thumbnail.png.
     For time-series: the Data.URL contains template placeholders in
-    the filename and lives in a product subdirectory. The thumbnail
-    is named after that subdirectory in the parent directory.
+    the path. The thumbnail is named after the deepest NON-template
+    path segment, in its parent directory. This handles both simple
+    nesting (.../product_dir/file_{year}.tif) and deeper nesting
+    (.../product_dir/{year}/file_{year}_{month}_{day}.tif).
     """
     url = row.get("Data.URL", "")
     if not url:
@@ -323,9 +325,24 @@ def _derive_thumbnail_url(row: dict) -> str | None:
     if row["TimeSeriesType"] == "Single":
         return url.replace(".tif", "_thumbnail.png")
 
-    # Time-series: URL like .../product_dir/file_{year}.tif
-    # Thumbnail is .../product_dir_thumbnail.png (in parent dir)
-    dir_url = url.rsplit("/", 1)[0]        # strip filename
-    parent = dir_url.rsplit("/", 1)[0]     # parent directory URL
-    stem = dir_url.rsplit("/", 1)[1]       # product directory name
-    return f"{parent}/{stem}_thumbnail.png"
+    # Find the deepest path segment that does NOT contain a template
+    # placeholder. That's the product directory name.
+    parts = url.split("/")
+    product_idx = None
+    for i in range(len(parts) - 1, -1, -1):
+        if "{" not in parts[i] and not parts[i].endswith(".tif"):
+            product_idx = i
+            break
+
+    if product_idx is None:
+        return None
+
+    stem = parts[product_idx]
+    parent = "/".join(parts[:product_idx])
+    thumb_url = f"{parent}/{stem}_thumbnail.png"
+
+    # Fix known hyphen/underscore mismatch in catalog URLs.
+    if "rmbl-dronedata" in thumb_url:
+        thumb_url = thumb_url.replace("rmbl-dronedata", "rmbl_dronedata")
+
+    return thumb_url

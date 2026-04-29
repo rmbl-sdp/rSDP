@@ -174,29 +174,51 @@ def main():
 
 
 def _resolve_first_url(row: dict) -> str | None:
-    """Resolve the template to the first time slice URL for COG probing."""
+    """Resolve the template to the first time slice URL for COG probing.
+
+    For Weekly/irregular products, uses the S3 manifest to find the
+    first actual file (since we can't predict the dates from a formula).
+    Falls back to hyphen/underscore correction if the URL 404s.
+    """
     template = row["Data.URL"]
     ts_type = row["TimeSeriesType"]
 
     if ts_type == "Yearly" and row.get("MinYear"):
-        return template.replace("{year}", str(row["MinYear"]))
-
-    if ts_type == "Monthly" and row.get("MinDate"):
+        url = template.replace("{year}", str(row["MinYear"]))
+    elif ts_type == "Monthly" and row.get("MinDate"):
         d = row["MinDate"]
-        return (
+        url = (
             template.replace("{year}", str(d.year))
             .replace("{month}", f"{d.month:02d}")
         )
-
-    if ts_type == "Daily" and row.get("MinDate"):
+    elif ts_type == "Daily" and row.get("MinDate"):
         d = row["MinDate"]
         doy = d.strftime("%j")
-        return (
+        url = (
             template.replace("{year}", str(d.year))
             .replace("{day}", doy)
         )
+    elif ts_type == "Weekly":
+        # Use the manifest to find the first real file.
+        from lib.s3_manifest import build_manifest
+        slices = build_manifest(row, use_cache=True)
+        if slices:
+            return slices[0][2]
+        return None
+    else:
+        return None
 
-    return None
+    # If the resolved URL 404s, try the underscore variant.
+    if "rmbl-dronedata" in url:
+        import requests
+        try:
+            resp = requests.head(url, timeout=10)
+            if resp.status_code == 404:
+                url = url.replace("rmbl-dronedata", "rmbl_dronedata")
+        except Exception:
+            pass
+
+    return url
 
 
 if __name__ == "__main__":
