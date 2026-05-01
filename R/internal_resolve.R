@@ -28,13 +28,15 @@
 ## values are recycled against the longest vector. Placeholders that are
 ## NULL are left as-is in the template (callers are expected to only pass
 ## the placeholders their dataset uses).
-.substitute_template <- function(template, year = NULL, month = NULL, day = NULL) {
+.substitute_template <- function(template, year = NULL, month = NULL,
+                                  day = NULL, calendarday = NULL) {
   stopifnot(length(template) == 1L)
 
   lens <- c(
-    if (!is.null(year))  length(year),
-    if (!is.null(month)) length(month),
-    if (!is.null(day))   length(day)
+    if (!is.null(year))        length(year),
+    if (!is.null(month))       length(month),
+    if (!is.null(day))         length(day),
+    if (!is.null(calendarday)) length(calendarday)
   )
   if (length(lens) == 0L) {
     return(template)
@@ -42,16 +44,18 @@
   n <- max(lens)
   stopifnot(all(lens == 1L | lens == n))
 
-  year_v  <- if (is.null(year))  NULL else rep(as.character(year),  length.out = n)
-  month_v <- if (is.null(month)) NULL else rep(as.character(month), length.out = n)
-  day_v   <- if (is.null(day))   NULL else rep(as.character(day),   length.out = n)
+  year_v  <- if (is.null(year))        NULL else rep(as.character(year),        length.out = n)
+  month_v <- if (is.null(month))       NULL else rep(as.character(month),       length.out = n)
+  day_v   <- if (is.null(day))         NULL else rep(as.character(day),         length.out = n)
+  cday_v  <- if (is.null(calendarday)) NULL else rep(as.character(calendarday), length.out = n)
 
   out <- character(n)
   for (i in seq_len(n)) {
     s <- template
-    if (!is.null(year_v))  s <- gsub("{year}",  year_v[i],  s, fixed = TRUE)
-    if (!is.null(month_v)) s <- gsub("{month}", month_v[i], s, fixed = TRUE)
-    if (!is.null(day_v))   s <- gsub("{day}",   day_v[i],   s, fixed = TRUE)
+    if (!is.null(year_v))  s <- gsub("{year}",        year_v[i],  s, fixed = TRUE)
+    if (!is.null(month_v)) s <- gsub("{month}",       month_v[i], s, fixed = TRUE)
+    if (!is.null(day_v))   s <- gsub("{day}",         day_v[i],   s, fixed = TRUE)
+    if (!is.null(cday_v))  s <- gsub("{calendarday}", cday_v[i],  s, fixed = TRUE)
     out[i] <- s
   }
   out
@@ -61,12 +65,14 @@
 ## Caller must have already run .validate_args_vs_type() on the same
 ## cat_line$TimeSeriesType so we can assume the arg combo is valid here.
 .resolve_time_slices <- function(cat_line, years, months_pad,
-                                 date_start, date_end, verbose) {
+                                 date_start, date_end, dates,
+                                 verbose) {
   switch(cat_line$TimeSeriesType,
     Single  = .resolve_single(cat_line, verbose),
     Yearly  = .resolve_yearly(cat_line, years, date_start, date_end, verbose),
     Monthly = .resolve_monthly(cat_line, years, months_pad, date_start, date_end, verbose),
     Daily   = .resolve_daily(cat_line, date_start, date_end, verbose),
+    Weekly  = .resolve_weekly(cat_line, dates, date_start, date_end, verbose),
     stop(sprintf("Unsupported TimeSeriesType: '%s'", cat_line$TimeSeriesType))
   )
 }
@@ -221,6 +227,70 @@
   layer_names <- format(days_overlap, format = "%Y-%m-%d")
   list(paths = paths, names = layer_names)
 }
+
+## Weekly/irregular: resolves dates from a baked manifest (offline) or
+## STAC traversal (online), filters to the requested subset, and returns
+## one path per date. Sets is_imagery=TRUE to signal the orchestrator
+## to load as a list of SpatRasters instead of stacking.
+.resolve_weekly <- function(cat_line, dates, date_start, date_end, verbose) {
+  template <- paste0(.SDP_VSICURL_PREFIX, cat_line$Data.URL)
+
+  ## Get available dates from baked manifest.
+  manifests <- get0("SDP_manifests", envir = asNamespace("rSDP"))
+  all_dates <- if (!is.null(manifests)) manifests[[cat_line$CatalogID]] else NULL
+
+  if (is.null(all_dates) || length(all_dates) == 0L) {
+    stop(sprintf(
+      "No date manifest found for '%s'. Run scripts/update_catalog.sh to regenerate manifests, or use sdp_get_dates() with source='stac'.",
+      cat_line$CatalogID
+    ))
+  }
+
+  ## Filter to requested dates.
+  if (!is.null(dates)) {
+    missing <- dates[!dates %in% all_dates]
+    if (length(missing) > 0L) {
+      warning(sprintf("No data for %d of %d requested dates. Available range: %s to %s.",
+                      length(missing), length(dates), min(all_dates), max(all_dates)))
+    }
+    selected <- sort(dates[dates %in% all_dates])
+    if (length(selected) == 0L) {
+      stop(sprintf("None of the requested dates are available. Available range: %s to %s.",
+                   min(all_dates), max(all_dates)))
+    }
+  } else if (!is.null(date_start) && !is.null(date_end)) {
+    selected <- all_dates[all_dates >= date_start & all_dates <= date_end]
+    if (length(selected) == 0L) {
+      stop(sprintf("No data available between %s and %s. Available range: %s to %s.",
+                   date_start, date_end, min(all_dates), max(all_dates)))
+    }
+  } else {
+    selected <- all_dates
+  }
+
+  ## Resolve each date to a URL.
+  years_v  <- as.character(format(selected, "%Y"))
+  months_v <- format(selected, "%m")
+  days_v   <- format(selected, "%d")
+  paths <- .substitute_template(template,
+                                year = years_v,
+                                month = months_v,
+                                calendarday = days_v)
+  layer_names <- format(selected, "%Y-%m-%d")
+
+  if (verbose) {
+    message(sprintf("Returning %d dates for weekly dataset.", length(selected)))
+  }
+
+  ## is_imagery is determined by the catalog Type field, not the
+  ## TimeSeriesType. Products with Type="Imagery" have varying extents
+  ## per time step and must be loaded individually. Future irregular
+  ## time-series on a consistent grid (e.g., weekly snow products)
+  ## will have Type != "Imagery" and stack normally.
+  list(paths = paths, names = layer_names,
+       is_imagery = (cat_line$Type == "Imagery"))
+}
+
 
 ## Filter an already-loaded SpatRaster by a `years` or `date_start`/
 ## `date_end` range, preserving the error-on-empty / warn-on-partial

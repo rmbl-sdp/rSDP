@@ -72,6 +72,10 @@
     if (has_years || has_months) {
       stop("For Daily datasets, use `date_start`/`date_end` instead of `years` or `months`.")
     }
+  } else if (ts_type == "Weekly") {
+    if (has_years || has_months) {
+      stop("For Weekly datasets, use `date_start`/`date_end` or `dates` instead of `years` or `months`.")
+    }
   }
   ## Seasonal or unknown types fall through without validation, matching
   ## the old behavior (there is no resolver for Seasonal yet either).

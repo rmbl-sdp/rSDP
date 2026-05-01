@@ -11,10 +11,12 @@ sdp_get_raster(
   months = NULL,
   date_start = NULL,
   date_end = NULL,
+  dates = NULL,
   verbose = TRUE,
   download_files = FALSE,
   download_path = NULL,
   overwrite = FALSE,
+  bands = NULL,
   ...
 )
 }

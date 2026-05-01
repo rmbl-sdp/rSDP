@@ -30,9 +30,11 @@
 sdp_get_raster <- function(catalog_id = NULL, url = NULL,
                            years = NULL, months = NULL,
                            date_start = NULL, date_end = NULL,
+                           dates = NULL,
                            verbose = TRUE,
                            download_files = FALSE, download_path = NULL,
-                           overwrite = FALSE, ...) {
+                           overwrite = FALSE,
+                           bands = NULL, ...) {
 
   normalized <- .validate_user_args(catalog_id, url, years, months,
                                     date_start, date_end,
@@ -45,10 +47,35 @@ sdp_get_raster <- function(catalog_id = NULL, url = NULL,
     .validate_args_vs_type(cat_line$TimeSeriesType,
                            years, months, date_start, date_end)
     spec <- .resolve_time_slices(cat_line, years, months_pad,
-                                 date_start, date_end, verbose)
+                                 date_start, date_end, dates,
+                                 verbose)
+
+    ## Irregular imagery: load each date as a separate SpatRaster
+    ## (varying extents cannot be stacked into a single raster).
+    if (isTRUE(spec$is_imagery)) {
+      rasters <- lapply(spec$paths, function(p) {
+        r <- .load_raster_from_paths(p, download_files, download_path,
+                                     overwrite, ...)
+        if (!is.null(bands)) r <- r[[bands]]
+        .apply_raster_metadata(r, layer_names = NULL,
+                               scale_factor = cat_line$DataScaleFactor,
+                               offset       = cat_line$DataOffset)
+      })
+      names(rasters) <- spec$names
+      if (verbose) {
+        message(sprintf(
+          "Returning a list of %d SpatRasters (one per date). Irregular imagery has varying extents and cannot be stacked into a single raster.",
+          length(rasters)
+        ))
+      }
+      return(rasters)
+    }
+
+    ## Regular products: single stacked SpatRaster.
     raster <- .load_raster_from_paths(spec$paths,
                                       download_files, download_path,
                                       overwrite, ...)
+    if (!is.null(bands)) raster <- raster[[bands]]
     return(.apply_raster_metadata(raster, spec$names,
                                   scale_factor = cat_line$DataScaleFactor,
                                   offset       = cat_line$DataOffset))
@@ -115,6 +142,12 @@ sdp_extract_data <- function(raster,locations, date_start=NULL,
                              bind=TRUE, return_type="SpatVector",
                              method="bilinear", sum_fun="mean",
                              verbose=TRUE,...){
+
+   if (is.list(raster) && !inherits(raster, "SpatRaster")) {
+     stop("sdp_extract_data() does not yet support lists of SpatRasters. ",
+          "For irregular imagery, extract from each element individually:\n",
+          "  lapply(raster_list, function(r) sdp_extract_data(r, locations, ...))")
+   }
 
    stopifnot("Raster must be a daily time-series with layer names representing \
              dates if `date_start` or `date_end` are specified"=
