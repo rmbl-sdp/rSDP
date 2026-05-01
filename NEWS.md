@@ -1,3 +1,14 @@
+# rSDP 0.4
+
+* New `sdp_get_dates()` function discovers available dates for any time-series product. For regular products (Yearly/Monthly/Daily), dates are computed from the catalog. For irregular products (Weekly drone imagery), dates are queried from the live STAC catalog or a baked offline manifest. Supports `source = "auto"`, `"stac"`, or `"manifest"`.
+* `sdp_get_raster()` now supports Weekly/irregular time-series products (R6D001, R6D002). Products with `Type="Imagery"` return a named list of SpatRasters (one per date) since each acquisition has varying spatial extents. Other irregular time-series on consistent grids will stack normally.
+* New `dates` parameter for `sdp_get_raster()`: accepts an explicit Date vector for exact date selection.
+* New `bands` parameter for `sdp_get_raster()`: select specific bands from multi-band imagery (e.g., `bands = 1:3` for RGB).
+* Added `{calendarday}` template placeholder support for weekly URL patterns.
+* Baked date manifests for R6D001 (111 dates) and R6D002 (55 dates) stored in package data for offline use.
+* Updated catalog to 162 products including Release 6 GT drone imagery.
+* `sdp_extract_data()` now provides a helpful error when passed a list of SpatRasters from irregular imagery, directing users to extract per-element via `lapply()`.
+
 # rSDP 0.3
 
 * New `sdp_browse()` function renders a visual thumbnail grid of data products in the RStudio/Positron Viewer pane. Accepts the same filter arguments as `sdp_get_catalog()`. Mirrors the `browse()` feature in the pysdp companion package.
