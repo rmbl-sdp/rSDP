@@ -29,9 +29,11 @@ sdp_get_raster(
 
 \item{months}{numeric. For monthly time-series data, a numeric vector specifying which months of data to return. The default \code{NULL} returns all available months.}
 
-\item{date_start}{class \code{Date}. For daily time-series data, the first day of data to return.}
+\item{date_start}{class \code{Date}. For daily or weekly time-series data, the first day of data to return.}
 
-\item{date_end}{class \code{Date}. For daily time-series data, the last day of data to return.}
+\item{date_end}{class \code{Date}. For daily or weekly time-series data, the last day of data to return.}
+
+\item{dates}{class \code{Date}. An explicit vector of dates to retrieve. Use \code{sdp_get_dates()} to discover available dates for irregular products. When provided, only the specified dates are loaded.}
 
 \item{verbose}{logical. Should the function print status and progress messages?}
 
@@ -41,25 +43,47 @@ sdp_get_raster(
 
 \item{overwrite}{logical. Should files with the same names as the datasets be overwritten in \code{download_path}? If \code{FALSE}, the function will skip downloading files that already exist in the destination.}
 
+\item{bands}{numeric. For multi-band imagery, a vector of band indices to load (e.g., \code{1:3} for RGB). Default \code{NULL} loads all bands.}
+
 \item{...}{Other arguments to pass to the \code{terra::rast()} function.}
 }
 \value{
-An R object (class \code{terra::SpatRaster}) representing the raster dataset.
+For regular data products: a \code{terra::SpatRaster}. For imagery
+products (\code{Type="Imagery"}): a named list of \code{SpatRaster} objects,
+one per date.
 }
 \description{
-Create an R object representing an SDP dataset.
+Loads geospatial raster data from the RMBL Spatial Data Platform. For
+regular time-series (Yearly, Monthly, Daily), returns a multi-layer
+\code{SpatRaster}. For imagery products (e.g., weekly drone orthomosaics),
+returns a named list of \code{SpatRaster} objects — one per date — since
+each acquisition may have a different spatial extent.
 }
 \details{
 Files headers are read from cloud-based datasets using the \code{terra} package, but the full dataset is not downloaded locally unless \code{download_files=TRUE}. Instead \code{terra} uses the web-based file system embedded in GDAL (VSICURL) to access datasets on the cloud. For large datasets and slow network connections, the function might take up to a minute to complete.
 Specifying local downloads \code{download_files=TRUE} might be more efficient for multi-layer data, but can take up lots of disk space.
+
+For imagery products (\code{Type="Imagery"} in the catalog, such as weekly
+drone orthomosaics), the function returns a named list of \code{SpatRaster}
+objects rather than a single stacked raster, because each acquisition
+has a different spatial extent. Use \code{sdp_get_dates()} to discover
+available dates, and pass specific dates via the \code{dates} parameter
+to control which images are loaded.
 }
 \examples{
-## Lookup catalog number for a dataset.
-cat <- sdp_get_catalog(domain='UG',type='Vegetation')
+\dontrun{
+## Regular data product (returns a SpatRaster)
+cat <- sdp_get_catalog(domains='UG', types='Vegetation')
 lc_id <- cat$CatalogID[cat$Product=='Basic Landcover']
-
-## Connect to the dataset without downloading
 landcover <- sdp_get_raster(lc_id)
-landcover
+
+## Weekly drone imagery (returns a list of SpatRasters)
+dates <- sdp_get_dates("R6D001")
+imgs <- sdp_get_raster("R6D001", dates = dates[1:3])
+terra::plot(imgs[[1]])
+
+## Load only RGB bands from multi-band imagery
+rgb <- sdp_get_raster("R6D001", dates = dates[1], bands = 1:3)
+}
 
 }
