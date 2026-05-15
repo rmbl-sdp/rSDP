@@ -1,3 +1,12 @@
+# rSDP 0.6
+
+* New issue-tracking system for SDP **datasets**, separate from the rSDP code repo. Dataset issues live at <https://github.com/rmbl-sdp/sdp-products>, filed via structured GitHub Issue Forms with required `CatalogID`, type, and severity fields.
+* New `sdp_report_issue(catalog_id, type = NULL)` — opens the prefilled new-issue form for a CatalogID (optionally pre-selecting the issue type) in the user's browser.
+* New `sdp_known_issues(catalog_id = NULL, refresh = FALSE)` — queries the GitHub API for open issues and returns a tidy data frame; results cached per-user for 1 hour.
+* New optional `with_issue_counts = FALSE` argument on `sdp_get_catalog()` and `sdp_browse()`. When `TRUE`, the catalog gains an `OpenIssues` column and browse cards render a "⚠ N open issues" badge linking to the filtered open-issues view.
+* STAC: every collection now carries `rmbl:open_issues_count` plus `report-issue` and `related` rel links. Counts are refreshed within ~30 seconds of any issue event by a patch-in-place GitHub Actions workflow on `rmbl-sdp/sdp-products` (only collection.json files are ever rewritten; never items).
+* New vignette `reporting-issues.Rmd` walks through the end-to-end flow.
+
 # rSDP 0.5
 
 * New dataset version-control system: the catalog now carries `Deprecated` and `NewVersionID` columns. Deprecated datasets are hidden from `sdp_get_catalog()` and `sdp_browse()` by default; pass `include_deprecated = TRUE` to show them.
