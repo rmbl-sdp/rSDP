@@ -23,7 +23,7 @@ make build
 python build_stac.py --output-dir out/stac/v1
 ```
 
-First run fetches metadata XML and COG headers from S3 (~2 minutes for 121 products). Subsequent runs use cached data from `.cache/` and complete in seconds.
+First run fetches metadata XML and COG headers from S3 (~5 minutes for 164 products). Subsequent runs use cached data from `.cache/` and complete in seconds.
 
 ### Validate
 
@@ -82,3 +82,24 @@ python build_stac.py --help
 rm -rf .cache/     # re-fetches everything on next build
 make clean         # removes out/ only
 ```
+
+## Refreshing issue counts without a full rebuild
+
+Open-issue counts on STAC collections (`rmbl:open_issues_count`) are kept fresh by a separate, much lighter pipeline. Rebuilding the full STAC tree to refresh ~164 collection-level numbers would needlessly rewrite ~32K item JSONs, so this script only patches `collection.json` files in place:
+
+```bash
+# Download just the collection.json files from S3.
+mkdir -p stac-tree
+aws s3 sync s3://rmbl-sdp/stac/v1/ stac-tree/ \
+  --exclude "*" --include "*/collection.json"
+
+# Patch counts + report-issue/related links.
+python refresh_issue_counts.py --stac-dir stac-tree
+
+# Sync only changed collection.json files back.
+aws s3 sync stac-tree/ s3://rmbl-sdp/stac/v1/ \
+  --exclude "*" --include "*/collection.json" --acl public-read
+```
+
+In practice this runs automatically via a GitHub Actions workflow on
+[`rmbl-sdp/sdp-products`](https://github.com/rmbl-sdp/sdp-products) on issue events plus a nightly cron fallback (see `.github/workflows/refresh-issue-counts.yml` in that repo).

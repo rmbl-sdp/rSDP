@@ -26,7 +26,7 @@ R package providing a simplified interface for discovering, querying, and subset
 - All exported functions live in the `sdp_*` namespace
 - CRS for all SDP rasters is `EPSG:32613` (UTM 13N); the package hard-codes this
 - Catalog IDs are 6-character codes like `R3D009`, `R4D004`, `BM012` (Release/Basemap + type + number)
-- `TimeSeriesType` ∈ {`Single`, `Yearly`, `Monthly`, `Daily`} drives most branching in `sdp_get_raster()`
+- `TimeSeriesType` ∈ {`Single`, `Yearly`, `Seasonal`, `Monthly`, `Weekly`, `Daily`} (authoritative list: `R/constants.R::.SDP_TIMESERIES_TYPES`) drives most branching in `sdp_get_raster()`. `Weekly` is for irregular drone imagery; `Seasonal` is reserved (no resolver yet).
 - URL templates in the catalog use `{year}`, `{month}`, `{day}` placeholders that get substituted
 
 ## Common commands

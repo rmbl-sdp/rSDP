@@ -4,6 +4,7 @@
 # rSDP <img src="man/figures/logo.png" align="right" />
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The rSDP package provides a simple interface for discovering, querying,
@@ -47,9 +48,9 @@ currently available and what their spatial attributes are.
 library(rSDP)
 
 ## Gets entries for vegetation data products in the Upper Gunnison (UG) domain.
-sdp_cat <- sdp_get_catalog(domains="UG", 
+sdp_cat <- sdp_get_catalog(domains="UG",
                            types="Vegetation",
-                           deprecated=FALSE,
+                           include_deprecated=FALSE,
                            return_stac=FALSE)
 sdp_cat[,1:5]
 #>    CatalogID  Release       Type                       Product Domain
@@ -127,12 +128,12 @@ location_df <- data.frame(SiteName=c("Roaring Judy","Gothic","Galena Lake"),
 location_sv <- terra::vect(location_df,geom=c("Lon","Lat"),crs="EPSG:4327")
 
 dem_sample <- sdp_extract_data(raster=elev,locations=location_sv)
-#> [1] "Re-projecting locations to coordinate system of the raster."
-#> [1] "Extracting data at 3 locations for 1 raster layers."
-#> [1] "Extraction complete."
+#> Re-projecting locations to coordinate system of the raster.
+#> Extracting data at 3 locations for 1 raster layers.
+#> Extraction complete.
 slope_sample <- sdp_extract_data(raster=slope,locations=dem_sample)
-#> [1] "Extracting data at 3 locations for 1 raster layers."
-#> [1] "Extraction complete."
+#> Extracting data at 3 locations for 1 raster layers.
+#> Extraction complete.
 plot(slope_sample$UG_dem_3m_v1,slope_sample$UG_dem_slope_1m_v1,xlab="Elevation (m).",
      ylab="Slope (degrees)")
 ```
@@ -154,12 +155,14 @@ location_poly <- data.frame(SiteName=c("Wet","Conifer","Rocky"),
 location_poly_sv <- terra::vect(location_poly,geom="WKT",crs="EPSG:32613")
 
 slope_site_mean <- sdp_extract_data(raster=slope,locations=location_poly_sv)
-#> [1] "Extracting data at 3 locations for 1 raster layers."
-#> [1] "Extraction complete."
+#> Extracting data at 3 locations for 1 raster layers.
+#> |---------|---------|---------|---------|=========================================                                          |---------|---------|---------|---------|=========================================                                          |---------|---------|---------|---------|=========================================                                          
+#> Extraction complete.
 slope_site_sd <- sdp_extract_data(raster=slope,locations=slope_site_mean,
                                   sum_fun=sd,bind=TRUE)
-#> [1] "Extracting data at 3 locations for 1 raster layers."
-#> [1] "Extraction complete."
+#> Extracting data at 3 locations for 1 raster layers.
+#> |---------|---------|---------|---------|=========================================                                          |---------|---------|---------|---------|=========================================                                          |---------|---------|---------|---------|=========================================                                          
+#> Extraction complete.
 names(slope_site_sd) <- c("SiteName","ID","Slope_mean","ID2","Slope_sd")
 
 plot(slope_site_sd$Slope_mean,slope_site_sd$Slope_sd,xlab="Slope Mean (deg.)",
@@ -176,16 +179,12 @@ the polygon (useful for computing area-weighted means.)
 ``` r
 slope_allcells <- sdp_extract_data(raster=slope,locations=slope_site_mean,
                                   sum_fun=NULL,exact=TRUE,bind=FALSE)
-#> [1] "Extracting data at 3 locations for 1 raster layers."
-#> [1] "Extraction complete."
+#> Extracting data at 3 locations for 1 raster layers.
+#> |---------|---------|---------|---------|=========================================                                          
+#> Extraction complete.
 head(slope_allcells)
-#>   ID UG_dem_slope_1m_v1   fraction
-#> 1  1           4.609455 0.01733949
-#> 2  1           6.018766 0.34246161
-#> 3  1           9.753592 0.60725906
-#> 4  1           3.104769 0.06934668
-#> 5  1           6.362072 0.46575703
-#> 6  1           6.617933 0.88677505
+#> [1] ID                 UG_dem_slope_1m_v1 fraction          
+#> <0 rows> (or 0-length row.names)
 ```
 
 ## Working with raster time-series
@@ -197,13 +196,13 @@ year.
 ``` r
 ## Connects to rasters from a temporal subset of daily data.
 tmax <- sdp_get_raster("R4D004",date_start=as.Date("2011-12-01"),date_end=as.Date("2011-12-30"))
-#> [1] "Returning daily dataset with 30 layers..."
+#> Returning daily dataset with 30 layers...
 
 ## Further subsets when extracting data
 tmax_sample <- sdp_extract_data(tmax,location_sv,date_start=as.Date("2011-12-01"),date_end=as.Date("2011-12-20"))
-#> [1] "Re-projecting locations to coordinate system of the raster."
-#> [1] "Extracting data at 3 locations for 20 raster layers."
-#> [1] "Extraction complete."
+#> Re-projecting locations to coordinate system of the raster.
+#> Extracting data at 3 locations for 20 raster layers.
+#> Extraction complete.
 tmax_df <- as.data.frame(tmax_sample)
 dates <- as.Date(names(tmax_df)[3:ncol(tmax_sample)])
 sites <- tmax_df$SiteName
@@ -220,8 +219,9 @@ legend("bottomright", legend=sites,col=c(1,3,4),bty="n",lty=1)
 ``` r
 
 ##Retrieving rasters from a subset of years.
-snow_yearly <- sdp_get_raster("R4D001",years=c(2012,2019))
-#> [1] "Returning yearly dataset with 2 layers..."
+##(R4D001 was superseded by R6D007 in v0.5 — see sdp_get_catalog()$NewVersionID.)
+snow_yearly <- sdp_get_raster("R6D007",years=c(2012,2019))
+#> Returning yearly dataset with 2 layers...
 terra::plot(snow_yearly,range=c(60,230))
 ```
 
@@ -237,7 +237,7 @@ raster object with many (sometimes hundreds) of layers.
 ## Extracts with a single call.
 start1 <- Sys.time()
 tmax1 <- sdp_get_raster("R4D004",date_start=as.Date("2004-10-01"),date_end=as.Date("2004-10-31"))
-#> [1] "Returning daily dataset with 31 layers..."
+#> Returning daily dataset with 31 layers...
 
 tmax_extr1 <- sdp_extract_data(tmax1,location_sv,verbose=FALSE)
 elapsed1 <- Sys.time() - start1
@@ -275,7 +275,7 @@ library(doParallel)
 #> Loading required package: iterators
 #> Loading required package: parallel
 library(sf)
-#> Linking to GEOS 3.10.2, GDAL 3.4.2, PROJ 8.2.1; sf_use_s2() is TRUE
+#> Linking to GEOS 3.13.0, GDAL 3.8.5, PROJ 9.5.1; sf_use_s2() is TRUE
 
 ## Can't pass SpatVector or SpatRaster objects via Foreach, so convert to sf.
 locations_sf <- st_as_sf(location_sv)
@@ -301,9 +301,39 @@ elapsed4 <- Sys.time() - start4
 timings <- data.frame(approach=c("Single Call","Looping sdp_extract_data()","Looping over sdp_get_raster()","Foreach"),
                       timing=c(elapsed1,elapsed2,elapsed3,elapsed4))
 timings
-#>                        approach        timing
-#> 1                   Single Call 19.74518 secs
-#> 2    Looping sdp_extract_data() 27.44984 secs
-#> 3 Looping over sdp_get_raster() 29.54908 secs
-#> 4                       Foreach 35.03244 secs
+#>                        approach         timing
+#> 1                   Single Call 24.651491 secs
+#> 2    Looping sdp_extract_data() 23.695093 secs
+#> 3 Looping over sdp_get_raster() 24.856937 secs
+#> 4                       Foreach  6.811561 secs
 ```
+
+## Reporting issues with SDP datasets
+
+Issues with the SDP **datasets** (incorrect values, missing dates,
+metadata errors) are tracked at
+<https://github.com/rmbl-sdp/sdp-products>, separately from bugs in the
+rSDP package itself. From R:
+
+``` r
+## Open the prefilled issue form in your browser for a specific dataset.
+sdp_report_issue("R3D009")
+
+## See what's already been reported.
+sdp_known_issues("R3D009")
+
+## Include open-issue counts when listing the catalog.
+sdp_get_catalog(with_issue_counts = TRUE)
+```
+
+See the `Reporting Issues with SDP Datasets` vignette for the end-to-end
+flow.
+
+## Deprecated datasets
+
+When a dataset is superseded by a newer version, its `Deprecated` flag
+is set to `TRUE` and `NewVersionID` points at the replacement. By
+default `sdp_get_catalog()` and `sdp_browse()` hide deprecated rows;
+pass `include_deprecated = TRUE` to see them. `sdp_get_raster()` will
+load a deprecated dataset but emit a warning pointing at the recommended
+replacement.

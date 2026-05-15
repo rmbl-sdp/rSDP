@@ -135,7 +135,7 @@ def main():
     log.info("Pre-fetch complete.")
 
     # --- Step 2.5: Fetch open issue counts (one API call, cheap) ---
-    log.info("Fetching open issue counts from rmbl-sdp/sdp-issues...")
+    log.info("Fetching open issue counts from rmbl-sdp/sdp-products...")
     issue_counts = fetch_open_issue_counts()
     log.info("Open issue counts: %d products have open issues", len(issue_counts))
 
