@@ -1,3 +1,13 @@
+# rSDP 0.5
+
+* New dataset version-control system: the catalog now carries `Deprecated` and `NewVersionID` columns. Deprecated datasets are hidden from `sdp_get_catalog()` and `sdp_browse()` by default; pass `include_deprecated = TRUE` to show them.
+* `sdp_get_raster()`, `sdp_get_metadata()`, and `sdp_get_dates()` emit a warning pointing at the replacement when the user resolves a deprecated `catalog_id`.
+* `sdp_browse()` renders a small "deprecated → <NewVersionID>" badge on deprecated product cards (and tints them).
+* STAC catalog: deprecated collections set `deprecated: true`, declare the STAC version extension, surface `rmbl:new_version_id`, and carry a `successor-version` rel link to the replacement collection (with the reciprocal `predecessor-version` link on the new collection).
+* Renamed the `deprecated` argument on `sdp_get_catalog()` and `sdp_browse()` to `include_deprecated` (boolean, default `FALSE`). The old set-filter form (`deprecated = c(FALSE, TRUE)`) is no longer supported.
+* Catalog loaders (R `data-raw/SDP_catalog.R` and Python `stac-gen/lib/catalog_loader.py`) now hard-fail when required URL fields (`Data.URL`, `Metadata.URL`) are empty, instead of silently shipping a catalog with missing thumbnails and `license="proprietary"` fallback.
+* Updated catalog to 164 rows: 162 active products plus R4D001 (→ R6D007) and R4D002 (→ R6D008) marked deprecated, with new Release 6 snow products replacing them.
+
 # rSDP 0.4
 
 * New `sdp_get_dates()` function discovers available dates for any time-series product. For regular products (Yearly/Monthly/Daily), dates are computed from the catalog. For irregular products (Weekly drone imagery), dates are queried from the live STAC catalog or a baked offline manifest. Supports `source = "auto"`, `"stac"`, or `"manifest"`.
