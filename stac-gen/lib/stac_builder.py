@@ -25,6 +25,9 @@ PROJ_EXT_URL = (
 RASTER_EXT_URL = (
     "https://stac-extensions.github.io/raster/v1.1.0/schema.json"
 )
+VERSION_EXT_URL = (
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json"
+)
 
 COG_MEDIA_TYPE = "image/tiff; application=geotiff; profile=cloud-optimized"
 
@@ -105,18 +108,28 @@ def build_collection(
 
     license_spdx = metadata.get("license_spdx", "proprietary")
 
+    extra_fields = {
+        "rmbl:domain": row["Domain"],
+        "rmbl:type": row["Type"],
+        "rmbl:release": row["Release"],
+        "rmbl:catalog_id": row["CatalogID"],
+    }
+    stac_extensions: list[str] = []
+    if row.get("Deprecated"):
+        extra_fields["deprecated"] = True
+        new_id = row.get("NewVersionID")
+        if new_id:
+            extra_fields["rmbl:new_version_id"] = new_id
+        stac_extensions.append(VERSION_EXT_URL)
+
     collection = pystac.Collection(
         id=collection_id,
         title=metadata.get("title") or row["Product"],
         description=metadata.get("description") or f"SDP product: {row['Product']}",
         license=license_spdx,
         extent=extent,
-        extra_fields={
-            "rmbl:domain": row["Domain"],
-            "rmbl:type": row["Type"],
-            "rmbl:release": row["Release"],
-            "rmbl:catalog_id": row["CatalogID"],
-        },
+        extra_fields=extra_fields,
+        stac_extensions=stac_extensions,
     )
 
     # Summaries.
@@ -188,8 +201,10 @@ def build_item(
     properties = {"created": datetime.now(timezone.utc).isoformat()}
     if row.get("Resolution"):
         properties["gsd"] = row["Resolution"]
+    item_extensions = [PROJ_EXT_URL, RASTER_EXT_URL]
     if row.get("Deprecated"):
         properties["deprecated"] = True
+        item_extensions.append(VERSION_EXT_URL)
 
     item = pystac.Item(
         id=item_id,
@@ -199,7 +214,7 @@ def build_item(
         start_datetime=start_dt,
         end_datetime=end_dt,
         properties=properties,
-        stac_extensions=[PROJ_EXT_URL, RASTER_EXT_URL],
+        stac_extensions=item_extensions,
     )
 
     # Projection extension fields.
@@ -265,6 +280,24 @@ def build_item(
         raster_ext.apply(bands=[band])
 
     return item
+
+
+def link_successor_version(
+    deprecated_collection: pystac.Collection,
+    successor_collection: pystac.Collection,
+) -> None:
+    """Wire a `successor-version` rel link from a deprecated collection
+    to its replacement, and the reciprocal `predecessor-version` link.
+
+    Per the STAC version extension, the link is added on the collection;
+    clients render the relationship without needing per-item links.
+    """
+    deprecated_collection.add_link(
+        pystac.Link(rel="successor-version", target=successor_collection)
+    )
+    successor_collection.add_link(
+        pystac.Link(rel="predecessor-version", target=deprecated_collection)
+    )
 
 
 def _make_item_id(row: dict, start_date: date, end_date: date | None) -> str:

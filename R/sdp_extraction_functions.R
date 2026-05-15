@@ -66,8 +66,9 @@ sdp_get_raster <- function(catalog_id = NULL, url = NULL,
   months_pad <- normalized$months_pad
 
   if (!is.null(catalog_id)) {
-    cat <- sdp_get_catalog(deprecated = c(FALSE, TRUE))
+    cat <- sdp_get_catalog(include_deprecated = TRUE)
     cat_line <- cat[cat$CatalogID == catalog_id, ]
+    .warn_if_deprecated(cat_line)
     .validate_args_vs_type(cat_line$TimeSeriesType,
                            years, months, date_start, date_end)
     spec <- .resolve_time_slices(cat_line, years, months_pad,

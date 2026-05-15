@@ -28,6 +28,7 @@ from lib.stac_builder import (
     build_domain_catalog,
     build_item,
     build_root_catalog,
+    link_successor_version,
 )
 from lib.time_resolver import resolve_time_slices
 
@@ -135,6 +136,10 @@ def main():
     # --- Step 3: Build the STAC tree ---
     root = build_root_catalog(source_filename)
 
+    # Track CatalogID → collection so we can wire successor-version links
+    # in a second pass once every collection has been built.
+    collections_by_cat_id: dict[str, "pystac.Collection"] = {}
+
     # Group rows by Domain.
     rows_sorted = sorted(rows, key=lambda r: r["Domain"])
     for domain, domain_rows in groupby(rows_sorted, key=lambda r: r["Domain"]):
@@ -148,6 +153,7 @@ def main():
             slices = resolve_time_slices(row, use_cache=use_cache)
 
             collection = build_collection(row, meta, cog, slices)
+            collections_by_cat_id[cat_id] = collection
 
             for start_date, end_date, resolved_url in slices:
                 item = build_item(
@@ -158,6 +164,24 @@ def main():
             domain_cat.add_child(collection)
 
         root.add_child(domain_cat)
+
+    # Wire successor-version / predecessor-version links between
+    # deprecated collections and their replacements.
+    for row in rows:
+        if not row.get("Deprecated"):
+            continue
+        new_id = row.get("NewVersionID")
+        if not new_id:
+            continue
+        old_coll = collections_by_cat_id.get(row["CatalogID"])
+        new_coll = collections_by_cat_id.get(new_id)
+        if old_coll is None or new_coll is None:
+            log.warning(
+                "Skipping successor link for %s -> %s: collection(s) missing",
+                row["CatalogID"], new_id,
+            )
+            continue
+        link_successor_version(old_coll, new_coll)
 
     # --- Step 4: Write to disk ---
     output_dir = args.output_dir

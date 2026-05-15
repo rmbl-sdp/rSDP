@@ -81,3 +81,20 @@
   ## the old behavior (there is no resolver for Seasonal yet either).
   invisible(NULL)
 }
+
+## Emit a warning when a user loads a deprecated dataset, pointing at the
+## replacement when one is recorded in `NewVersionID`. `cat_line` is a
+## single-row data frame from `sdp_get_catalog(include_deprecated=TRUE)`.
+.warn_if_deprecated <- function(cat_line) {
+  if (nrow(cat_line) == 0L) return(invisible(NULL))
+  if (!isTRUE(cat_line$Deprecated)) return(invisible(NULL))
+  new_id <- cat_line$NewVersionID
+  if (is.null(new_id) || is.na(new_id) || !nzchar(new_id)) {
+    warning(sprintf("Catalog ID '%s' is deprecated and has no recorded replacement.",
+                    cat_line$CatalogID), call. = FALSE)
+  } else {
+    warning(sprintf("Catalog ID '%s' is deprecated; use '%s' instead.",
+                    cat_line$CatalogID, new_id), call. = FALSE)
+  }
+  invisible(NULL)
+}

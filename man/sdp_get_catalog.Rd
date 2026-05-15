@@ -9,7 +9,7 @@ sdp_get_catalog(
   types = .SDP_TYPES,
   releases = .SDP_RELEASES,
   timeseries_types = .SDP_TIMESERIES_TYPES,
-  deprecated = FALSE,
+  include_deprecated = FALSE,
   return_stac = FALSE
 )
 }
@@ -22,12 +22,12 @@ sdp_get_catalog(
 
 \item{timeseries_types}{Some datasets are structured as single datasets (e.g. \code{Single}), and others are time-series with various periods (e.g.\code{Monthly}).}
 
-\item{deprecated}{Should older versions of datasets be returned, or just the latest version?}
+\item{include_deprecated}{Logical. If \code{FALSE} (default), deprecated datasets are hidden. Set \code{TRUE} to include them alongside current datasets; consult the \code{NewVersionID} column to find the recommended replacement.}
 
 \item{return_stac}{Logical. If \code{TRUE}, returns the root of the RMBL SDP's static STAC catalog as an \code{rstac} object (requires the \code{rstac} package). The returned catalog is browseable via \code{rstac} traversal methods but does not support \code{rstac::stac_search()} (which requires a STAC API server). You can browse the catalog interactively at \verb{https://radiantearth.github.io/stac-browser/#/external/rmbl-sdp.s3.us-east-2.amazonaws.com/stac/v1/catalog.json}. When \code{return_stac=TRUE}, filter arguments (\code{domains}, \code{types}, etc.) are ignored; use \code{rstac} methods to filter the returned catalog. Default \code{FALSE} returns an ordinary data frame.}
 }
 \value{
-A data frame containing basic catalog information for the matched data products.
+A data frame containing basic catalog information for the matched data products. The \code{Deprecated} and \code{NewVersionID} columns indicate whether a dataset has been superseded and, if so, the \code{CatalogID} of the replacement.
 }
 \description{
 Discover SDP data by downloading catalog information.
@@ -40,7 +40,7 @@ str(sdp_cat)
 
 ## Gets a subset of catalog entries for the Upper Gunnison (UG) domain.
 sdp_sub <- sdp_get_catalog(domains="UG", types="Vegetation",
-                          deprecated=FALSE,return_stac=FALSE)
+                          include_deprecated=FALSE, return_stac=FALSE)
 sdp_sub
 
 }

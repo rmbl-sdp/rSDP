@@ -30,7 +30,7 @@ test_that("sdp_get_raster() accepts a direct URL (url= branch)", {
   ## Single dataset's Data.URL from the catalog so it stays valid as long
   ## as R1D014 exists. The URL branch does not apply scale/offset, and
   ## that caveat is documented in @param url.
-  cat_row <- sdp_get_catalog(deprecated = c(FALSE, TRUE))
+  cat_row <- sdp_get_catalog(include_deprecated = TRUE)
   cat_row <- cat_row[cat_row$CatalogID == "R1D014", ]
   expect_s4_class(sdp_get_raster(url = cat_row$Data.URL), "SpatRaster")
 })

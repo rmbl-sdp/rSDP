@@ -13,7 +13,7 @@
 #' @param types The type(s) of products to include.
 #' @param releases Which release(s) to include.
 #' @param timeseries_types Which time-series types to include.
-#' @param deprecated Logical. Should deprecated datasets be included?
+#' @param include_deprecated Logical. If `FALSE` (default), deprecated datasets are hidden. Set `TRUE` to also show deprecated products; each deprecated card displays a small line pointing at the replacement `CatalogID`.
 #' @param columns Integer. Number of columns in the grid (default 4).
 #' @param width Integer. Card width in pixels (default 220).
 #' @param max_products Integer or NULL. Cap the number of products shown.
@@ -39,7 +39,7 @@ sdp_browse <- function(domains = .SDP_DOMAINS,
                        types = .SDP_TYPES,
                        releases = .SDP_RELEASES,
                        timeseries_types = .SDP_TIMESERIES_TYPES,
-                       deprecated = FALSE,
+                       include_deprecated = FALSE,
                        columns = 4L,
                        width = 220L,
                        max_products = NULL) {
@@ -51,7 +51,7 @@ sdp_browse <- function(domains = .SDP_DOMAINS,
     types = types,
     releases = releases,
     timeseries_types = timeseries_types,
-    deprecated = deprecated
+    include_deprecated = include_deprecated
   )
 
   if (!is.null(max_products)) {
@@ -130,10 +130,23 @@ sdp_browse <- function(domains = .SDP_DOMAINS,
   meta_parts <- meta_parts[meta_parts != ""]
   meta_line <- paste(meta_parts, collapse = " \u00b7 ")
 
+  is_deprecated <- isTRUE(row$Deprecated)
+  new_id <- if ("NewVersionID" %in% names(row)) as.character(row$NewVersionID) else ""
+  if (is.na(new_id)) new_id <- ""
+  deprecated_badge <- if (is_deprecated) {
+    label <- if (nzchar(new_id)) sprintf("deprecated \u2192 %s", new_id) else "deprecated"
+    htmltools::tagList(
+      htmltools::tags$small(htmltools::tags$b(label)),
+      htmltools::tags$br()
+    )
+  } else NULL
+
+  card_bg <- if (is_deprecated) "#f0e6e6" else "#f8f8f8"
+
   htmltools::tags$td(
     width = width,
     valign = "top",
-    bgcolor = "#f8f8f8",
+    bgcolor = card_bg,
     htmltools::tags$img(
       src = thumb_url,
       width = width - 10,
@@ -147,6 +160,7 @@ sdp_browse <- function(domains = .SDP_DOMAINS,
     htmltools::tags$br(),
     htmltools::tags$small(meta_line),
     htmltools::tags$br(),
+    deprecated_badge,
     htmltools::tags$a(
       href = browser_url,
       target = "_blank",

@@ -50,7 +50,8 @@ devtools::build_readme()       # or rmarkdown::render("README.Rmd")
 ## Things to be careful about
 
 - **Live tests**: `tests/testthat/test-*.R` make real HTTP requests to S3. A failing test could mean a code bug *or* a moved/renamed dataset in the catalog. Investigate before "fixing."
-- **Catalog drift**: `R/sysdata.rda` is a frozen snapshot. The canonical source is the CSV referenced in `data-raw/SDP_catalog.R` (currently `SDP_product_table_04_11_2023.csv`). If the catalog CSV changes, both `data-raw/SDP_catalog.R` (R side) and `stac-gen/build_stac.py` (STAC side) need to be re-run.
+- **Catalog drift**: `R/sysdata.rda` is a frozen snapshot. The canonical source is the CSV referenced in `data-raw/SDP_catalog.R` (currently `SDP_product_table_05_15_2026.csv`). If the catalog CSV changes, both `data-raw/SDP_catalog.R` (R side) and `stac-gen/lib/catalog_loader.py` (STAC side) need their URL bumped and re-run.
+- **Deprecation flow**: catalog rows carry `Deprecated` and `NewVersionID` columns. `sdp_get_catalog()` and `sdp_browse()` hide deprecated rows by default; pass `include_deprecated = TRUE` to show them. `sdp_get_raster()`, `sdp_get_metadata()`, and `sdp_get_dates()` emit a `warning()` pointing at `NewVersionID` when the user resolves a deprecated `catalog_id`. On the STAC side, deprecated collections set `deprecated: true`, declare the version extension, and carry a `successor-version` rel link to the replacement collection (with a reciprocal `predecessor-version` link).
 - **STAC catalog deployment**: `sdp_get_catalog(return_stac=TRUE)` fetches from `s3://rmbl-sdp/stac/v1/catalog.json`. If the STAC catalog hasn't been synced to S3 yet, this will error. The R test skips gracefully in that case. See `stac-gen/README.md` for deployment steps.
 - **Don't edit `NAMESPACE` or `man/*.Rd` by hand** — they're generated.
 - **Don't edit `README.md` directly** — edit `README.Rmd` and rebuild.

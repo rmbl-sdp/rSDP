@@ -32,11 +32,12 @@ sdp_get_dates <- function(catalog_id, source = c("auto", "stac", "manifest")) {
   source <- match.arg(source)
   stopifnot(is.character(catalog_id) && length(catalog_id) == 1L)
 
-  cat <- sdp_get_catalog(deprecated = c(FALSE, TRUE))
+  cat <- sdp_get_catalog(include_deprecated = TRUE)
   row <- cat[cat$CatalogID == catalog_id, ]
   if (nrow(row) == 0L) {
     stop(sprintf("Catalog ID '%s' not found.", catalog_id))
   }
+  .warn_if_deprecated(row)
 
   ts_type <- row$TimeSeriesType
 

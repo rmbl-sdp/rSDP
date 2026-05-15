@@ -12,7 +12,7 @@ import requests
 # Same URL as data-raw/SDP_catalog.R uses — canonical source.
 DEFAULT_CATALOG_URL = (
     "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/"
-    "SDP_product_table_04_29_2026.csv"
+    "SDP_product_table_05_15_2026.csv"
 )
 
 CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache"
@@ -95,6 +95,7 @@ def parse_catalog(csv_text: str) -> list[dict]:
                 "Domain": raw["Domain"].strip(),
                 "Resolution": _parse_resolution(raw.get("Resolution", "")),
                 "Deprecated": raw.get("Deprecated", "").strip().upper() == "TRUE",
+                "NewVersionID": raw.get("NewVersionID", "").strip() or None,
                 "MinDate": _parse_date(raw.get("MinDate", "")),
                 "MaxDate": _parse_date(raw.get("MaxDate", "")),
                 "MinYear": _safe_int(raw.get("MinYear", "")),
@@ -115,6 +116,29 @@ def parse_catalog(csv_text: str) -> list[dict]:
     return rows
 
 
+# Catalog rows must carry these URL fields. Without them the STAC builder
+# cannot resolve COG paths (Data.URL) or parse license/title (Metadata.URL),
+# and downstream consumers silently fall back to broken defaults
+# (license="proprietary", missing thumbnails). Fail loudly at load time
+# rather than shipping a half-broken catalog.
+REQUIRED_URL_FIELDS = ("Data.URL", "Metadata.URL")
+
+
+def validate_required_fields(rows: list[dict]) -> None:
+    """Raise ValueError if any row is missing a required URL field."""
+    missing: dict[str, list[str]] = {}
+    for row in rows:
+        for field in REQUIRED_URL_FIELDS:
+            value = row.get(field)
+            if value is None or not str(value).strip():
+                missing.setdefault(field, []).append(row.get("CatalogID", "?"))
+    if missing:
+        parts = [f"{f} (rows: {', '.join(ids)})" for f, ids in sorted(missing.items())]
+        raise ValueError(
+            "Catalog is missing required URL fields:\n  " + "\n  ".join(parts)
+        )
+
+
 def load_catalog(
     url: str = DEFAULT_CATALOG_URL,
     use_cache: bool = True,
@@ -122,5 +146,6 @@ def load_catalog(
     """Fetch and parse the catalog. Returns (rows, source_filename)."""
     csv_text = fetch_catalog_csv(url, use_cache=use_cache)
     rows = parse_catalog(csv_text)
+    validate_required_fields(rows)
     source_filename = url.rsplit("/", 1)[-1]
     return rows, source_filename

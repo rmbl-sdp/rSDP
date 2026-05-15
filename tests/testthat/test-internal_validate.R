@@ -104,3 +104,33 @@ test_that(".validate_user_args rejects both catalog_id and url", {
     "either catalog_id or url"
   )
 })
+
+test_that(".warn_if_deprecated emits a warning pointing at NewVersionID", {
+  row <- data.frame(
+    CatalogID = "R4D001",
+    Deprecated = TRUE,
+    NewVersionID = "R6D007",
+    stringsAsFactors = FALSE
+  )
+  expect_warning(.warn_if_deprecated(row), "R4D001.*R6D007")
+})
+
+test_that(".warn_if_deprecated is silent for current datasets", {
+  row <- data.frame(
+    CatalogID = "R4D008",
+    Deprecated = FALSE,
+    NewVersionID = NA_character_,
+    stringsAsFactors = FALSE
+  )
+  expect_silent(.warn_if_deprecated(row))
+})
+
+test_that(".warn_if_deprecated warns without a replacement when NewVersionID is missing", {
+  row <- data.frame(
+    CatalogID = "R0X000",
+    Deprecated = TRUE,
+    NewVersionID = NA_character_,
+    stringsAsFactors = FALSE
+  )
+  expect_warning(.warn_if_deprecated(row), "no recorded replacement")
+})

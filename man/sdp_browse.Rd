@@ -9,7 +9,7 @@ sdp_browse(
   types = .SDP_TYPES,
   releases = .SDP_RELEASES,
   timeseries_types = .SDP_TIMESERIES_TYPES,
-  deprecated = FALSE,
+  include_deprecated = FALSE,
   columns = 4L,
   width = 220L,
   max_products = NULL
@@ -24,7 +24,7 @@ sdp_browse(
 
 \item{timeseries_types}{Which time-series types to include.}
 
-\item{deprecated}{Logical. Should deprecated datasets be included?}
+\item{include_deprecated}{Logical. If \code{FALSE} (default), deprecated datasets are hidden. Set \code{TRUE} to also show deprecated products; each deprecated card displays a small line pointing at the replacement \code{CatalogID}.}
 
 \item{columns}{Integer. Number of columns in the grid (default 4).}
 

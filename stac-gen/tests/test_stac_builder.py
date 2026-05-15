@@ -1,6 +1,39 @@
 from datetime import date
 
-from lib.stac_builder import _bbox_to_geometry, _make_item_id
+from lib.stac_builder import (
+    VERSION_EXT_URL,
+    _bbox_to_geometry,
+    _make_item_id,
+    build_collection,
+    build_item,
+    link_successor_version,
+)
+
+
+def _row(cat_id="R4D001", deprecated=False, new_version_id=None):
+    return {
+        "CatalogID": cat_id,
+        "Release": "Release4",
+        "Type": "Snow",
+        "Product": f"Product {cat_id}",
+        "Domain": "UG",
+        "Resolution": 27.0,
+        "Deprecated": deprecated,
+        "NewVersionID": new_version_id,
+        "MinDate": date(2018, 1, 1),
+        "MaxDate": date(2024, 12, 31),
+        "MinYear": 2018,
+        "MaxYear": 2024,
+        "TimeSeriesType": "Yearly",
+        "TimeSeriesRegularity": "Regular",
+        "DataType": "float32",
+        "DataUnit": "days",
+        "DataScaleFactor": 1.0,
+        "DataOffset": 0.0,
+        "Data.URL": f"https://example.com/{cat_id}_{{year}}.tif",
+        "Metadata.URL": f"https://example.com/{cat_id}.xml",
+        "ColorRampDefault": "viridis",
+    }
 
 
 def test_make_item_id_single():
@@ -31,3 +64,45 @@ def test_bbox_to_geometry():
     assert coords[0] == coords[-1]  # first == last
     assert [-107.0, 38.0] in coords
     assert [-106.0, 39.0] in coords
+
+
+def test_build_collection_marks_deprecated_with_new_version():
+    row = _row(cat_id="R4D001", deprecated=True, new_version_id="R6D007")
+    coll = build_collection(row, metadata={}, cog_info={}, time_slices=[])
+    assert coll.extra_fields["deprecated"] is True
+    assert coll.extra_fields["rmbl:new_version_id"] == "R6D007"
+    assert VERSION_EXT_URL in coll.stac_extensions
+
+
+def test_build_collection_skips_deprecated_fields_for_current_products():
+    row = _row(cat_id="R6D007", deprecated=False)
+    coll = build_collection(row, metadata={}, cog_info={}, time_slices=[])
+    assert "deprecated" not in coll.extra_fields
+    assert "rmbl:new_version_id" not in coll.extra_fields
+    assert VERSION_EXT_URL not in coll.stac_extensions
+
+
+def test_build_item_marks_deprecated_and_declares_version_ext():
+    row = _row(cat_id="R4D001", deprecated=True, new_version_id="R6D007")
+    item = build_item(
+        row,
+        start_date=date(2020, 1, 1),
+        end_date=date(2020, 12, 31),
+        resolved_url="https://example.com/R4D001_2020.tif",
+        cog_info={},
+        metadata={},
+    )
+    assert item.properties.get("deprecated") is True
+    assert VERSION_EXT_URL in item.stac_extensions
+
+
+def test_link_successor_version_adds_reciprocal_rel_links():
+    old_row = _row(cat_id="R4D001", deprecated=True, new_version_id="R6D007")
+    new_row = _row(cat_id="R6D007", deprecated=False)
+    old = build_collection(old_row, metadata={}, cog_info={}, time_slices=[])
+    new = build_collection(new_row, metadata={}, cog_info={}, time_slices=[])
+    link_successor_version(old, new)
+    assert any(link.rel == "successor-version" and link.target is new
+               for link in old.links)
+    assert any(link.rel == "predecessor-version" and link.target is old
+               for link in new.links)

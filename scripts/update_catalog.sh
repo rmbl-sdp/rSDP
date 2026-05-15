@@ -74,7 +74,7 @@ fi
 
 echo ""
 echo "=== Summary ==="
-NROWS=$(Rscript -e 'devtools::load_all(quiet=TRUE); cat(nrow(sdp_get_catalog(deprecated=c(FALSE,TRUE))))')
+NROWS=$(Rscript -e 'devtools::load_all(quiet=TRUE); cat(nrow(sdp_get_catalog(include_deprecated=TRUE)))')
 NJSON=$(find stac-gen/out/stac/v1 -name '*.json' | wc -l | tr -d ' ')
 echo "  R catalog rows: $NROWS"
 echo "  STAC JSON files: $NJSON"
