@@ -10,6 +10,7 @@ sdp_browse(
   releases = .SDP_RELEASES,
   timeseries_types = .SDP_TIMESERIES_TYPES,
   include_deprecated = FALSE,
+  with_issue_counts = FALSE,
   columns = 4L,
   width = 220L,
   max_products = NULL
@@ -25,6 +26,8 @@ sdp_browse(
 \item{timeseries_types}{Which time-series types to include.}
 
 \item{include_deprecated}{Logical. If \code{FALSE} (default), deprecated datasets are hidden. Set \code{TRUE} to also show deprecated products; each deprecated card displays a small line pointing at the replacement \code{CatalogID}.}
+
+\item{with_issue_counts}{Logical. If \code{TRUE}, fetch open issue counts from \code{rmbl-sdp/sdp-products} and render a "⚠ N open issues" badge on affected cards.}
 
 \item{columns}{Integer. Number of columns in the grid (default 4).}
 

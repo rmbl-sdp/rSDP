@@ -1,0 +1,116 @@
+---
+title: "Reporting issues with SDP datasets"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reporting issues with SDP datasets}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(eval = FALSE)
+library(rSDP)
+```
+
+## What this is
+
+Bugs and feature requests for the **rSDP package itself** live at
+<https://github.com/rmbl-sdp/rSDP/issues>. Issues with the **data products**
+served by the Spatial Data Platform — incorrect pixel values, missing dates,
+metadata errors, acquisition gaps, documentation problems — live in a
+separate repository: <https://github.com/rmbl-sdp/sdp-products>.
+
+Keeping the two separate makes it easier to triage each kind of feedback and
+to surface known dataset problems back to other users.
+
+## Reporting an issue
+
+The easiest way is from R, with the dataset's CatalogID in hand:
+
+```{r}
+sdp_report_issue("R4D004")
+```
+
+That opens your browser to the [Issue Form](https://github.com/rmbl-sdp/sdp-products/issues/new?template=dataset-issue.yml)
+with the CatalogID pre-filled. Fill in the remaining structured fields
+(issue type, severity, what you observed, what you expected, how to
+reproduce) and submit.
+
+You can also pre-fill the issue type:
+
+```{r}
+sdp_report_issue("R3D009", type = "metadata-error")
+```
+
+Valid types: `incorrect-values`, `missing-dates`, `metadata-error`,
+`acquisition-gap`, `documentation`, `other`.
+
+A validation bot will comment within a minute if the CatalogID isn't
+recognized, and it auto-applies `product:<CATID>`, `type:<...>`, and
+`severity:<...>` labels. A maintainer then reviews and either confirms,
+asks for more information, declines to fix it, or resolves the issue.
+
+## Checking for known issues
+
+Before reporting, see if your problem is already known:
+
+```{r}
+sdp_known_issues("R4D004")
+```
+
+Returns a data frame of open issues for that CatalogID: number, title, type,
+severity, status, dates, and URL. Pass no argument to get every open issue
+across all datasets.
+
+Results are cached on disk for an hour to keep interactive use responsive
+and to stay within GitHub's anonymous rate limit. Pass `refresh = TRUE` to
+force a re-fetch.
+
+```{r}
+sdp_known_issues(refresh = TRUE)
+```
+
+If you have a GitHub Personal Access Token in `GITHUB_PAT` or
+`GITHUB_TOKEN`, rSDP will use it for the API call (higher rate limit), but
+this is optional — the public endpoint works without auth.
+
+## Surfacing issue counts in catalog browsing
+
+The catalog can carry an open-issue count per dataset:
+
+```{r}
+cat <- sdp_get_catalog(with_issue_counts = TRUE)
+head(cat[cat$OpenIssues > 0, c("CatalogID", "Product", "OpenIssues")])
+```
+
+`sdp_browse()` renders the same information as a small "⚠ N open issues"
+badge on each card:
+
+```{r}
+sdp_browse(types = "Snow", with_issue_counts = TRUE)
+```
+
+The badge links straight to the filtered open-issues view on GitHub, so
+clicking it shows the actual tickets.
+
+## In the STAC catalog
+
+The static STAC catalog at
+`s3://rmbl-sdp/stac/v1/` carries the same information on every collection:
+
+- `rmbl:open_issues_count` — number of open issues for the dataset
+- A `report-issue` rel link to the prefilled new-issue form
+- A `related` rel link to the filtered open-issues list
+
+The count is refreshed within ~30 seconds of any issue event (open, close,
+relabel) via a GitHub Actions workflow on `rmbl-sdp/sdp-products`, so STAC
+Browser and other clients see fresh numbers without waiting for a full
+catalog rebuild.
+
+## Without a GitHub account
+
+Right now, filing an issue requires a GitHub account. We may add a no-auth
+intake form (`rmbl.org/sdp/report-issue/`) if the GitHub-account barrier
+turns out to be a real friction point for the community. If you'd rather
+email about a dataset problem, write to <support@rmbl.org> and we'll file
+the issue on your behalf.

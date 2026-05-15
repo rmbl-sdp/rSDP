@@ -14,6 +14,7 @@
 #' @param releases Which release(s) to include.
 #' @param timeseries_types Which time-series types to include.
 #' @param include_deprecated Logical. If `FALSE` (default), deprecated datasets are hidden. Set `TRUE` to also show deprecated products; each deprecated card displays a small line pointing at the replacement `CatalogID`.
+#' @param with_issue_counts Logical. If `TRUE`, fetch open issue counts from `rmbl-sdp/sdp-products` and render a "⚠ N open issues" badge on affected cards.
 #' @param columns Integer. Number of columns in the grid (default 4).
 #' @param width Integer. Card width in pixels (default 220).
 #' @param max_products Integer or NULL. Cap the number of products shown.
@@ -40,6 +41,7 @@ sdp_browse <- function(domains = .SDP_DOMAINS,
                        releases = .SDP_RELEASES,
                        timeseries_types = .SDP_TIMESERIES_TYPES,
                        include_deprecated = FALSE,
+                       with_issue_counts = FALSE,
                        columns = 4L,
                        width = 220L,
                        max_products = NULL) {
@@ -51,7 +53,8 @@ sdp_browse <- function(domains = .SDP_DOMAINS,
     types = types,
     releases = releases,
     timeseries_types = timeseries_types,
-    include_deprecated = include_deprecated
+    include_deprecated = include_deprecated,
+    with_issue_counts = with_issue_counts
   )
 
   if (!is.null(max_products)) {
@@ -141,6 +144,18 @@ sdp_browse <- function(domains = .SDP_DOMAINS,
     )
   } else NULL
 
+  open_issues <- if ("OpenIssues" %in% names(row)) suppressWarnings(as.integer(row$OpenIssues)) else 0L
+  if (length(open_issues) == 0L || is.na(open_issues)) open_issues <- 0L
+  issues_badge <- if (open_issues > 0L) {
+    issues_url <- sprintf("https://github.com/rmbl-sdp/sdp-products/issues?q=is%%3Aissue+is%%3Aopen+label%%3Aproduct%%3A%s",
+                          utils::URLencode(cat_id, reserved = TRUE))
+    label <- sprintf("\u26a0 %d open issue%s", open_issues, ifelse(open_issues == 1L, "", "s"))
+    htmltools::tagList(
+      htmltools::tags$small(htmltools::tags$a(href = issues_url, target = "_blank", label)),
+      htmltools::tags$br()
+    )
+  } else NULL
+
   card_bg <- if (is_deprecated) "#f0e6e6" else "#f8f8f8"
 
   htmltools::tags$td(
@@ -161,6 +176,7 @@ sdp_browse <- function(domains = .SDP_DOMAINS,
     htmltools::tags$small(meta_line),
     htmltools::tags$br(),
     deprecated_badge,
+    issues_badge,
     htmltools::tags$a(
       href = browser_url,
       target = "_blank",

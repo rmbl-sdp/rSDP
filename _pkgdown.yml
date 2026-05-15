@@ -18,6 +18,8 @@ navbar:
       href: articles/pretty-maps.html
     - text: Wrangling Spatial Datasets
       href: articles/wrangle-raster-data.html
+    - text: Reporting Issues with SDP Datasets
+      href: articles/reporting-issues.html
     - text: -------
     - text: "SDP Dataset Catalog"
     - text: All SDP Datasets

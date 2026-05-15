@@ -21,6 +21,7 @@ import pystac
 
 from lib.catalog_loader import load_catalog
 from lib.cog_probe import probe_cog
+from lib.issues import fetch_open_issue_counts
 from lib.metadata_parser import fetch_metadata
 from lib.slugs import check_slug_collisions, product_to_slug
 from lib.stac_builder import (
@@ -133,6 +134,11 @@ def main():
 
     log.info("Pre-fetch complete.")
 
+    # --- Step 2.5: Fetch open issue counts (one API call, cheap) ---
+    log.info("Fetching open issue counts from rmbl-sdp/sdp-issues...")
+    issue_counts = fetch_open_issue_counts()
+    log.info("Open issue counts: %d products have open issues", len(issue_counts))
+
     # --- Step 3: Build the STAC tree ---
     root = build_root_catalog(source_filename)
 
@@ -152,7 +158,10 @@ def main():
             cog = cog_cache.get(cat_id, {})
             slices = resolve_time_slices(row, use_cache=use_cache)
 
-            collection = build_collection(row, meta, cog, slices)
+            collection = build_collection(
+                row, meta, cog, slices,
+                open_issues_count=issue_counts.get(cat_id, 0),
+            )
             collections_by_cat_id[cat_id] = collection
 
             for start_date, end_date, resolved_url in slices:

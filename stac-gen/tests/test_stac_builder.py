@@ -96,6 +96,32 @@ def test_build_item_marks_deprecated_and_declares_version_ext():
     assert VERSION_EXT_URL in item.stac_extensions
 
 
+def test_build_collection_emits_report_issue_and_related_links():
+    row = _row(cat_id="R4D001")
+    coll = build_collection(row, metadata={}, cog_info={}, time_slices=[])
+    rels = [(l.rel, l.href if l.target is None else l.target) for l in coll.links]
+    rel_names = {r for r, _ in rels}
+    assert "report-issue" in rel_names
+    assert "related" in rel_names
+    report_href = next(t for r, t in rels if r == "report-issue")
+    assert "catalog_id=R4D001" in report_href
+    related_href = next(t for r, t in rels if r == "related")
+    assert "product:R4D001" in related_href.replace("%3A", ":")
+
+
+def test_build_collection_sets_open_issues_count_when_provided():
+    row = _row(cat_id="R4D008")
+    coll = build_collection(row, metadata={}, cog_info={}, time_slices=[],
+                            open_issues_count=3)
+    assert coll.extra_fields["rmbl:open_issues_count"] == 3
+
+
+def test_build_collection_omits_open_issues_count_when_unknown():
+    row = _row(cat_id="R4D008")
+    coll = build_collection(row, metadata={}, cog_info={}, time_slices=[])
+    assert "rmbl:open_issues_count" not in coll.extra_fields
+
+
 def test_link_successor_version_adds_reciprocal_rel_links():
     old_row = _row(cat_id="R4D001", deprecated=True, new_version_id="R6D007")
     new_row = _row(cat_id="R6D007", deprecated=False)

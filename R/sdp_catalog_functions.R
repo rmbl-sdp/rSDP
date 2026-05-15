@@ -5,6 +5,7 @@
 #' @param releases Which release (group) of data products to return.
 #' @param timeseries_types Some datasets are structured as single datasets (e.g. `Single`), and others are time-series with various periods (e.g.`Monthly`).
 #' @param include_deprecated Logical. If `FALSE` (default), deprecated datasets are hidden. Set `TRUE` to include them alongside current datasets; consult the `NewVersionID` column to find the recommended replacement.
+#' @param with_issue_counts Logical. If `TRUE`, add an `OpenIssues` column listing the count of open data-quality issues per dataset (from `rmbl-sdp/sdp-products`). Off by default to avoid a network round-trip on every catalog call; uses [sdp_known_issues()]'s on-disk cache.
 #' @param return_stac Logical. If `TRUE`, returns the root of the RMBL SDP's static STAC catalog as an `rstac` object (requires the `rstac` package). The returned catalog is browseable via `rstac` traversal methods but does not support `rstac::stac_search()` (which requires a STAC API server). You can browse the catalog interactively at `https://radiantearth.github.io/stac-browser/#/external/rmbl-sdp.s3.us-east-2.amazonaws.com/stac/v1/catalog.json`. When `return_stac=TRUE`, filter arguments (`domains`, `types`, etc.) are ignored; use `rstac` methods to filter the returned catalog. Default `FALSE` returns an ordinary data frame.
 #'
 #' @return
@@ -27,13 +28,16 @@ sdp_get_catalog <- function(domains=.SDP_DOMAINS,
                             types=.SDP_TYPES,
                             releases=.SDP_RELEASES,
                             timeseries_types=.SDP_TIMESERIES_TYPES,
-                            include_deprecated=FALSE,return_stac=FALSE){
+                            include_deprecated=FALSE,
+                            with_issue_counts=FALSE,
+                            return_stac=FALSE){
 
   stopifnot(all(domains %in% .SDP_DOMAINS))
   stopifnot(all(types %in% .SDP_TYPES))
   stopifnot(all(releases %in% .SDP_RELEASES))
   stopifnot(all(timeseries_types %in% .SDP_TIMESERIES_TYPES))
   stopifnot(is.logical(include_deprecated) && length(include_deprecated) == 1)
+  stopifnot(is.logical(with_issue_counts) && length(with_issue_counts) == 1)
   stopifnot(is.logical(return_stac) && length(return_stac) == 1)
 
   if (isTRUE(return_stac)) {
@@ -53,6 +57,11 @@ sdp_get_catalog <- function(domains=.SDP_DOMAINS,
   cat_filt <- catalog[catalog$Domain %in% domains & catalog$Type %in% types &
                   catalog$Release %in% releases & catalog$Deprecated %in% deprecated_filter &
                   catalog$TimeSeriesType %in% timeseries_types,]
+  if (isTRUE(with_issue_counts)) {
+    counts <- .open_issue_counts()
+    cat_filt$OpenIssues <- counts$OpenIssues[match(cat_filt$CatalogID, counts$CatalogID)]
+    cat_filt$OpenIssues[is.na(cat_filt$OpenIssues)] <- 0L
+  }
   return(cat_filt)
 }
 

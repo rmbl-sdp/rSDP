@@ -13,6 +13,7 @@ import pystac
 from pystac.extensions.projection import ProjectionExtension
 from pystac.extensions.raster import RasterBand, RasterExtension
 
+from .issues import issues_search_url, report_issue_url
 from .slugs import product_to_slug
 
 # STAC spec version — pinned for reproducibility.
@@ -69,6 +70,7 @@ def build_collection(
     metadata: dict,
     cog_info: dict,
     time_slices: list,
+    open_issues_count: int | None = None,
 ) -> pystac.Collection:
     """Create a Collection for a single product (catalog row).
 
@@ -114,6 +116,8 @@ def build_collection(
         "rmbl:release": row["Release"],
         "rmbl:catalog_id": row["CatalogID"],
     }
+    if open_issues_count is not None:
+        extra_fields["rmbl:open_issues_count"] = int(open_issues_count)
     stac_extensions: list[str] = []
     if row.get("Deprecated"):
         extra_fields["deprecated"] = True
@@ -154,6 +158,25 @@ def build_collection(
                 title=f"Thumbnail for {metadata.get('title') or row['Product']}",
             ),
         )
+
+    # Issue-tracker links. `report-issue` deep-links to the prefilled
+    # Issue Form for this CatalogID; `related` points at the filtered
+    # open-issues list. Counts (if known) live on the collection itself
+    # as `rmbl:open_issues_count` so STAC Browser can display a badge.
+    collection.add_link(
+        pystac.Link(
+            rel="report-issue",
+            target=report_issue_url(row["CatalogID"]),
+            title="Report an issue with this dataset",
+        )
+    )
+    collection.add_link(
+        pystac.Link(
+            rel="related",
+            target=issues_search_url(row["CatalogID"]),
+            title="Open issues for this dataset",
+        )
+    )
 
     return collection
 
