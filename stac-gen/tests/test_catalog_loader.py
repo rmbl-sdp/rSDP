@@ -4,6 +4,7 @@ from lib.catalog_loader import (
     _parse_resolution,
     parse_catalog,
     validate_required_fields,
+    validate_unique_catalog_ids,
 )
 
 
@@ -94,6 +95,22 @@ def test_validate_required_fields_reports_all_offenders():
     assert "R6D008" in msg
     assert "Data.URL" in msg
     assert "Metadata.URL" in msg
+
+
+def test_validate_unique_catalog_ids_passes_unique_rows():
+    rows = [{"CatalogID": "R6D006"}, {"CatalogID": "R6D007"}]
+    validate_unique_catalog_ids(rows)  # should not raise
+
+
+def test_validate_unique_catalog_ids_rejects_duplicates():
+    rows = [
+        {"CatalogID": "R6D006"},
+        {"CatalogID": "R6D006"},
+        {"CatalogID": "R6D006"},
+        {"CatalogID": "R6D007"},
+    ]
+    with pytest.raises(ValueError, match="Duplicate CatalogIDs.*R6D006"):
+        validate_unique_catalog_ids(rows)
 
 
 def test_parse_catalog_deprecated_with_new_version_id():

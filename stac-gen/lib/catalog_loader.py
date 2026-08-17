@@ -12,7 +12,7 @@ import requests
 # Same URL as data-raw/SDP_catalog.R uses — canonical source.
 DEFAULT_CATALOG_URL = (
     "https://rmbl-sdp.s3.us-east-2.amazonaws.com/data_products/"
-    "SDP_product_table_05_15_2026.csv"
+    "SDP_product_table_08_17_2026.csv"
 )
 
 CACHE_DIR = Path(__file__).resolve().parent.parent / ".cache"
@@ -139,6 +139,22 @@ def validate_required_fields(rows: list[dict]) -> None:
         )
 
 
+def validate_unique_catalog_ids(rows: list[dict]) -> None:
+    """Raise ValueError if any CatalogID appears more than once.
+
+    A fill-down slip in the source spreadsheet once published a table with
+    three rows sharing one CatalogID, silently shadowing two products and
+    dangling the NewVersionID references that pointed at them.
+    """
+    seen: dict[str, int] = {}
+    for row in rows:
+        cat_id = str(row.get("CatalogID", "")).strip()
+        seen[cat_id] = seen.get(cat_id, 0) + 1
+    dups = sorted(cid for cid, n in seen.items() if n > 1)
+    if dups:
+        raise ValueError(f"Duplicate CatalogIDs in catalog: {', '.join(dups)}")
+
+
 def load_catalog(
     url: str = DEFAULT_CATALOG_URL,
     use_cache: bool = True,
@@ -147,5 +163,6 @@ def load_catalog(
     csv_text = fetch_catalog_csv(url, use_cache=use_cache)
     rows = parse_catalog(csv_text)
     validate_required_fields(rows)
+    validate_unique_catalog_ids(rows)
     source_filename = url.rsplit("/", 1)[-1]
     return rows, source_filename

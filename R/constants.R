@@ -20,7 +20,7 @@
                 "Planning", "Radiation", "Snow", "Climate",
                 "Imagery", "Supplemental")
 
-.SDP_RELEASES <- c("Basemaps", "Release1", "Release2", "Release3", "Release4", "Release5", "Release6")
+.SDP_RELEASES <- c("Basemaps", "Release1", "Release2", "Release3", "Release4", "Release5", "Release6", "Release7")
 
 .SDP_TIMESERIES_TYPES <- c("Single", "Yearly", "Seasonal", "Monthly", "Weekly", "Daily")
 

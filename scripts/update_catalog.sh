@@ -10,7 +10,8 @@
 #
 # What it does:
 #   1. Regenerates R/sysdata.rda from the catalog CSV (R side)
-#   2. Rebuilds the static STAC catalog from the same CSV (Python side)
+#   2. Rebuilds the static STAC catalog from the same CSV (Python side),
+#      then re-bakes the irregular-product date manifests into sysdata.rda
 #   3. Runs R tests to verify the package still works
 #   4. Runs Python tests to verify the STAC tooling
 #   5. Syncs the STAC catalog to S3 staging (unless --skip-stac-sync)
@@ -45,6 +46,11 @@ cd stac-gen
 rm -f .cache/catalog*.csv
 .venv/bin/python build_stac.py --output-dir out/stac/v1 2>&1 | grep -v "boto3 not available"
 cd "$REPO_ROOT"
+echo ""
+
+echo "=== Step 2b: Re-bake date manifests into sysdata.rda ==="
+# Must follow the STAC build, which refreshes stac-gen/.cache/manifests/.
+Rscript -e 'source("data-raw/SDP_manifests.R")'
 echo ""
 
 echo "=== Step 3: Run R tests ==="

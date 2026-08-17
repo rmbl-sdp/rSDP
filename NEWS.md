@@ -1,3 +1,12 @@
+# rSDP 0.7
+
+* Updated catalog to 177 rows (from 164) for the Release 7 data products: 13 new Gothic Townsite datasets (`R7D001`–`R7D013`) covering land surface temperature (seasonal means, monthly climatology, principal components, and an irregular weekly time series) and UAS-derived surface/canopy structure (5 cm DEM, yearly DSMs, multi-year and yearly canopy height).
+* `R6D004` (5 cm GT DEM) is now deprecated in favor of `R7D002`; the usual deprecation warnings and STAC `successor-version` links apply.
+* Added `Release7` to the valid `releases` filter values.
+* New baked date manifest for `R7D006` (weekly GT land surface temperature, 113 dates), enabling offline date discovery via `sdp_get_dates(source = "manifest")`.
+* Fixed a catalog-regeneration bug where `data-raw/SDP_catalog.R` rewrote `sysdata.rda` without `SDP_manifests`, silently breaking offline Weekly date resolution (the 0.6 build shipped without manifests). The script now preserves existing manifests, and `scripts/update_catalog.sh` re-bakes them after the STAC build.
+* Upstream metadata cleanup: catalog `MinDate`/`MaxDate` now use 4-digit years consistently, and the Release 6 snow products carry corrected `Type = "Snow"` categories.
+
 # rSDP 0.6
 
 * New issue-tracking system for SDP **datasets**, separate from the rSDP code repo. Dataset issues live at <https://github.com/rmbl-sdp/sdp-products>, filed via structured GitHub Issue Forms with required `CatalogID`, type, and severity fields.
